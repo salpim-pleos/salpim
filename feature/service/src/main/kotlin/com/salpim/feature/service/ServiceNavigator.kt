@@ -1,0 +1,48 @@
+package com.salpim.feature.service
+
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import com.salpim.core.model.NavResult
+import com.salpim.core.model.NavigationLauncher
+import com.salpim.core.model.ServiceDestination
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * 사용자가 지정한 즐겨찾기 정비소. (S5에서 NaviHelper POI 검색이 확인되면 검색으로 확장)
+ * TODO: DataStore 영속화
+ */
+class FavoriteShopStore(initial: ServiceDestination? = null) {
+    private val _shop = MutableStateFlow(initial)
+    val shop: StateFlow<ServiceDestination?> = _shop.asStateFlow()
+    fun set(value: ServiceDestination?) {
+        _shop.value = value
+    }
+}
+
+/** "정비소로 안내" 결과를 사용자에게 보여 줄 문장으로 정리한다. */
+class ServiceNavigator(
+    private val launcher: NavigationLauncher,
+    private val store: FavoriteShopStore,
+) {
+    suspend fun navigateToFavorite(): String {
+        val shop = store.shop.value ?: return "즐겨찾는 정비소를 먼저 지정해 주세요"
+        if (!launcher.isAvailable) return "내비 연동을 준비 중이에요"
+        return when (val r = launcher.navigateTo(shop)) {
+            NavResult.Started -> "${shop.name}(으)로 안내를 시작했어요"
+            NavResult.Unsupported -> "내비 연동을 준비 중이에요"
+            is NavResult.Failed -> "안내를 시작하지 못했어요: ${r.reason}"
+        }
+    }
+}
+
+@Composable
+fun ServiceNavigateButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(onClick = onClick, modifier = modifier.testTag("btn_navigate_service")) {
+        Text("정비소로 안내")
+    }
+}
