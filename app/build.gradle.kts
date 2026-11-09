@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.ManagedVirtualDevice
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -6,8 +7,28 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// release 서명: keystore와 비밀번호는 레포 밖 properties 파일에서 읽는다 (커밋 금지).
+// 위치: -Psalpim.signingProps=<경로>, 기본 ~/.salpim-keys/keystore.properties
+// 키: storeFile, storePassword, keyAlias, keyPassword. 파일이 없으면 release는 서명 없이 빌드된다 (다른 PC/CI용)
+val defaultSigningPropsPath = "${System.getProperty("user.home")}/.salpim-keys/keystore.properties"
+val signingPropsFile = file(providers.gradleProperty("salpim.signingProps").getOrElse(defaultSigningPropsPath))
+val signingProps: Properties? = signingPropsFile.takeIf { it.isFile }?.let { f ->
+    Properties().apply { f.inputStream().use(::load) }
+}
+
 android {
     namespace = "com.salpim.app"
+
+    signingConfigs {
+        if (signingProps != null) {
+            create("release") {
+                storeFile = file(signingProps.getProperty("storeFile"))
+                storePassword = signingProps.getProperty("storePassword")
+                keyAlias = signingProps.getProperty("keyAlias")
+                keyPassword = signingProps.getProperty("keyPassword")
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.salpim.app"
@@ -27,7 +48,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            // TODO: 제출 전 서명 설정 (keystore는 local.properties/환경변수로 분리, 커밋 금지)
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
