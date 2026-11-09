@@ -19,7 +19,7 @@ class SimulatedSignalSourceTest {
         val seen = mutableListOf<VehicleSignal>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { src.signals.toList(seen) }
         src.start()
-        src.play(Scenarios.TIRE_WARNING)
+        src.play(Scenarios.ENGINE_OIL_WARNING)
         advanceTimeBy(20_000)
         assertEquals(SignalSourceKind.SIMULATED, src.kind)
         assertTrue(seen.any { (it.speedKmh ?: 0f) > 55f })

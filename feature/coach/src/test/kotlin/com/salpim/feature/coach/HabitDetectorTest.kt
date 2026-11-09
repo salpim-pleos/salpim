@@ -23,7 +23,7 @@ class HabitDetectorTest {
 
     @Test
     fun gentleScenariosProduceNoEvents() {
-        assertTrue(detect(Scenarios.TIRE_WARNING.frames(200, Scenarios.parked())).isEmpty())
+        assertTrue(detect(Scenarios.ENGINE_OIL_WARNING.frames(200, Scenarios.parked())).isEmpty())
         assertTrue(detect(Scenarios.PARKING_AFTER_WARNING.frames(200, Scenarios.parked())).isEmpty())
     }
 

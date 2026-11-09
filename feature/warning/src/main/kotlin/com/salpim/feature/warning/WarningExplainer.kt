@@ -1,6 +1,7 @@
 package com.salpim.feature.warning
 
 import android.content.Context
+import com.salpim.core.model.CarZone
 import com.salpim.core.model.Explanation
 import com.salpim.core.model.Urgency
 import com.salpim.core.model.WarningCode
@@ -20,6 +21,8 @@ internal data class KbEntry(
     val actions: List<String>,
     val urgency: Urgency,
     val needsService: Boolean,
+    val zone: CarZone? = null,
+    val plainMeaning: String? = null,
 )
 
 /**
@@ -40,6 +43,8 @@ class WarningExplainer internal constructor(private val entries: Map<String, KbE
             urgency = e.urgency,
             needsService = e.needsService,
             known = true,
+            zone = e.zone,
+            plainMeaning = e.plainMeaning,
         )
     }
 

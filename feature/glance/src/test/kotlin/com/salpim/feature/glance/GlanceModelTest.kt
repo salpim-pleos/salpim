@@ -22,8 +22,8 @@ class GlanceModelTest {
     fun mostUrgentVehicleWarningIsShown() {
         val items = GlanceModel.build(
             listOf(
-                exp(WarningCodes.TIRE_PRESSURE_LOW, Urgency.SERVICE_SOON),
-                exp(WarningCodes.BRAKE_SYSTEM, Urgency.IMMEDIATE_STOP, "브레이크"),
+                exp(WarningCodes.ENGINE_OIL_LOW, Urgency.SERVICE_SOON),
+                exp(WarningCodes.BRAKE_FLUID_CRITICAL, Urgency.IMMEDIATE_STOP, "브레이크"),
             ),
             90,
         )
@@ -32,9 +32,15 @@ class GlanceModelTest {
     }
 
     @Test
-    fun energyWarningsGoToEnergyItem() {
-        val items = GlanceModel.build(listOf(exp(WarningCodes.LOW_FUEL, Urgency.INFO, "연료 부족")), 90)
+    fun fuelSummaryBecomesFuelItem() {
+        val items = GlanceModel.build(emptyList(), 90, FuelSummary("95~160km", needsRefuel = true))
         assertEquals("이상 없음", items.first { it.id == "warning" }.value)
-        assertEquals("연료 부족", items.first { it.id == "energy" }.value)
+        assertEquals("95~160km", items.first { it.id == "fuel" }.value)
+        assertEquals(GlanceTone.CAUTION, items.first { it.id == "fuel" }.tone)
+    }
+
+    @Test
+    fun unknownFuelIsLeftOut() {
+        assertTrue(GlanceModel.build(emptyList(), 90, fuel = null).none { it.id == "fuel" })
     }
 }

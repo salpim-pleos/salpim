@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.sp
 import com.salpim.core.designsystem.SalpimColors
 import com.salpim.core.model.Explanation
 import com.salpim.core.model.Urgency
-import com.salpim.core.model.WarningCodes
 import com.salpim.core.model.ellipsize
 
 enum class GlanceTone { OK, CAUTION, ALERT }
@@ -30,11 +29,17 @@ data class GlanceItem(val id: String, val label: String, val value: String, val 
  * 주행 중 표시 항목. 최대 [maxItems]개 (안전/UX 규칙 1: 최대 3개).
  * 속도/RPM 같은 시스템 정보는 중복하지 않고 "지금 신경 써야 할 것"만.
  */
+/** 주유 예측 한 줄 요약 (feature/fuel 결과를 앱이 문장으로 바꿔 넘긴다) */
+data class FuelSummary(val text: String, val needsRefuel: Boolean)
+
 object GlanceModel {
-    fun build(warnings: List<Explanation>, safetyScore: Int, maxItems: Int = 3): List<GlanceItem> {
-        val vehicle = warnings.filterNot { it.code in WarningCodes.ENERGY }
-        val energy = warnings.filter { it.code in WarningCodes.ENERGY }
-        val top = vehicle.minByOrNull { it.urgency.ordinal }
+    fun build(
+        warnings: List<Explanation>,
+        safetyScore: Int,
+        fuel: FuelSummary? = null,
+        maxItems: Int = MAX_ITEMS,
+    ): List<GlanceItem> {
+        val top = warnings.minByOrNull { it.urgency.ordinal }
 
         val items = listOf(
             GlanceItem(
@@ -47,12 +52,14 @@ object GlanceModel {
                     else -> GlanceTone.CAUTION
                 },
             ),
-            GlanceItem(
-                id = "energy",
-                label = "연료·배터리",
-                value = energy.firstOrNull()?.title ?: "충분",
-                tone = if (energy.isEmpty()) GlanceTone.OK else GlanceTone.CAUTION,
-            ),
+            fuel?.let {
+                GlanceItem(
+                    id = "fuel",
+                    label = "연료",
+                    value = it.text,
+                    tone = if (it.needsRefuel) GlanceTone.CAUTION else GlanceTone.OK,
+                )
+            },
             GlanceItem(
                 id = "score",
                 label = "오늘의 안전 점수",
@@ -60,7 +67,7 @@ object GlanceModel {
                 tone = if (safetyScore >= GOOD_SCORE) GlanceTone.OK else GlanceTone.CAUTION,
             ),
         )
-        return items.take(maxItems.coerceAtMost(MAX_ITEMS))
+        return items.filterNotNull().take(maxItems.coerceAtMost(MAX_ITEMS))
     }
 
     private const val MAX_ITEMS = 3

@@ -31,17 +31,16 @@ class WarningExplainerTest {
 
     @Test
     fun allAppWarningCodesAreCovered() {
-        val declared = listOf(
-            WarningCodes.TIRE_PRESSURE_LOW,
-            WarningCodes.BRAKE_SYSTEM,
-            WarningCodes.ENGINE_OIL_PRESSURE,
-            WarningCodes.COOLANT_TEMP_HIGH,
-            WarningCodes.CHARGING_SYSTEM,
-            WarningCodes.AIRBAG,
-            WarningCodes.LOW_FUEL,
-            WarningCodes.EV_BATTERY_LOW,
-        )
-        assertEquals(declared.toSet(), explainer.knownCodes)
+        assertEquals(WarningCodes.ALL.toSet(), explainer.knownCodes)
+    }
+
+    @Test
+    fun everyEntryPointsToCarZoneWithPlainMeaning() {
+        for (code in explainer.knownCodes) {
+            val e = explainer.explain(code)
+            assertTrue("$code zone", e.zone != null)
+            assertTrue("$code plainMeaning", !e.plainMeaning.isNullOrBlank())
+        }
     }
 
     @Test
@@ -66,7 +65,7 @@ class WarningExplainerTest {
     @Test
     fun explainAllSortsByUrgency() {
         val list = explainer.explainAll(
-            listOf(WarningCodes.LOW_FUEL, WarningCodes.BRAKE_SYSTEM, WarningCodes.TIRE_PRESSURE_LOW),
+            listOf(WarningCodes.WASHER_FLUID_LOW, WarningCodes.ENGINE_OIL_CRITICAL, WarningCodes.ENGINE_OIL_LOW),
         )
         assertEquals(listOf(Urgency.IMMEDIATE_STOP, Urgency.SERVICE_SOON, Urgency.INFO), list.map { it.urgency })
     }

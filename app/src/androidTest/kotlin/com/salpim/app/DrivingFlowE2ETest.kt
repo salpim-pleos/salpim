@@ -42,8 +42,8 @@ class DrivingFlowE2ETest {
     private fun waitForTag(tag: String, timeoutMs: Long = 5_000) =
         rule.waitUntil(timeoutMs) { rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
 
-    private fun driveWithTireWarning() = setSignal {
-        copy(gear = Gear.DRIVE, parkingBrakeOn = false, speedKmh = 60f, activeWarnings = setOf(WarningCodes.TIRE_PRESSURE_LOW))
+    private fun driveWithEngineOilWarning() = setSignal {
+        copy(gear = Gear.DRIVE, parkingBrakeOn = false, speedKmh = 60f, activeWarnings = setOf(WarningCodes.ENGINE_OIL_LOW))
     }
 
     @Test
@@ -56,27 +56,27 @@ class DrivingFlowE2ETest {
 
     @Test
     fun drivingShowsOneLineWarningWithoutDetailOrButtons() {
-        driveWithTireWarning()
+        driveWithEngineOilWarning()
         waitForTag("screen_driving")
         waitForTag("warning_banner")
-        rule.onNodeWithText("타이어 공기압이 낮아요", substring = true).assertIsDisplayed()
+        rule.onNodeWithText("엔진오일이 부족해요", substring = true).assertIsDisplayed()
         rule.onAllNodesWithTag("warning_detail").assertCountEquals(0)
         rule.onAllNodesWithTag("btn_navigate_service").assertCountEquals(0)
-        rule.onAllNodesWithTag("scenario_tire_warning").assertCountEquals(0)
+        rule.onAllNodesWithTag("scenario_engine_oil_warning").assertCountEquals(0)
         // 배너 + 글랜스 2개 = 최대 3개
         rule.onAllNodesWithTag("glance_warning").assertCountEquals(0)
-        rule.onNodeWithTag("glance_energy").assertIsDisplayed()
+        rule.onNodeWithTag("glance_fuel").assertIsDisplayed()
         rule.onNodeWithTag("glance_score").assertIsDisplayed()
     }
 
     @Test
     fun afterParkingDetailAndServiceNavigationAreAvailable() {
-        driveWithTireWarning()
+        driveWithEngineOilWarning()
         waitForTag("screen_driving")
         setSignal { copy(speedKmh = 0f, gear = Gear.PARK, parkingBrakeOn = true) }
         // 디바운스(1.5초) 후 정차 화면
         waitForTag("screen_stopped")
-        rule.onNodeWithTag("warning_item_TIRE_PRESSURE_LOW").performScrollTo().performClick()
+        rule.onNodeWithTag("warning_item_ENGINE_OIL_LOW").performScrollTo().performClick()
         rule.onNodeWithTag("warning_detail").assertExists()
         rule.onNodeWithTag("btn_navigate_service").performScrollTo().performClick()
         // 블루핸즈 목록(mock) → 첫 지점 길 안내
@@ -88,7 +88,7 @@ class DrivingFlowE2ETest {
 
     @Test
     fun scenarioButtonDrivesTheApp() {
-        rule.onNodeWithTag("scenario_tire_warning").performScrollTo().performClick()
+        rule.onNodeWithTag("scenario_engine_oil_warning").performScrollTo().performClick()
         waitForTag("screen_driving", timeoutMs = 10_000)
         waitForTag("warning_banner", timeoutMs = 20_000)
     }

@@ -11,8 +11,8 @@ class InMemoryHistoryRepositoryTest {
     @Test
     fun sameWarningIsRecordedOnce() {
         val repo = InMemoryHistoryRepository()
-        repo.recordWarning(WarningCodes.AIRBAG, 1)
-        repo.recordWarning(WarningCodes.AIRBAG, 2)
+        repo.recordWarning(WarningCodes.AIRBAG_DEPLOYED, 1)
+        repo.recordWarning(WarningCodes.AIRBAG_DEPLOYED, 2)
         assertEquals(1, repo.warnings.value.size)
         assertEquals(1L, repo.warnings.value.single().firstSeenMs)
     }
@@ -20,7 +20,7 @@ class InMemoryHistoryRepositoryTest {
     @Test
     fun clearAllRemovesEverything() {
         val repo = InMemoryHistoryRepository()
-        repo.recordWarning(WarningCodes.AIRBAG, 1)
+        repo.recordWarning(WarningCodes.AIRBAG_DEPLOYED, 1)
         repo.recordEvent(DrivingEvent(DrivingEventType.HARD_BRAKE, 1, 20f))
         repo.clearAll()
         assertTrue(repo.warnings.value.isEmpty())

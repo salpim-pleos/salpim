@@ -9,7 +9,6 @@ import com.salpim.core.model.Explanation
 import com.salpim.core.model.UxPolicy
 import com.salpim.core.model.UxRestrictionFlags
 import com.salpim.core.model.WarningCode
-import com.salpim.core.model.WarningCodes
 import com.salpim.core.signal.sim.Scenarios
 import com.salpim.feature.coach.CoachReport
 import com.salpim.feature.coach.label
@@ -111,7 +110,7 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
     private fun buildState(engine: EngineState, inputs: UserInputs): MainUiState {
         val policy = UxPolicy.resolve(engine.drivingState, engine.ux)
         val report = CoachReport.from(engine.events)
-        val banner = engine.activeWarnings.firstOrNull { it.code !in WarningCodes.ENERGY }
+        val banner = engine.activeWarnings.firstOrNull()
         val warnings = (engine.activeWarnings.map { it.code } + engine.seenWarnings).distinct().map(
             c.explainer::explain,
         )
@@ -141,7 +140,12 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
     ): List<GlanceItem> {
         val recent = recentEvent(engine)
         val limit = if (hasBanner) UxPolicy.DRIVING_MAX_ITEMS - 1 else UxPolicy.DRIVING_MAX_ITEMS
-        return GlanceModel.build(engine.activeWarnings, report.score, policy.maxGlanceItems)
+        return GlanceModel.build(
+            engine.activeWarnings,
+            report.score,
+            FuelText.summary(engine.refuel),
+            policy.maxGlanceItems,
+        )
             .filterNot { hasBanner && it.id == GLANCE_WARNING_ID }
             .map { if (recent != null && it.id == GLANCE_SCORE_ID) recentEventItem(recent) else it }
             .take(limit)

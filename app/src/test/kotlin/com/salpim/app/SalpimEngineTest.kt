@@ -58,13 +58,13 @@ class SalpimEngineTest {
         // 출발 가속(약 9초) 후 경고가 켜짐
         advanceTimeBy(6_000)
         assertEquals(DrivingState.DRIVING, rig.engine.state.value.drivingState)
-        assertEquals(WarningCodes.TIRE_PRESSURE_LOW, rig.engine.state.value.activeWarnings.single().code)
+        assertEquals(WarningCodes.ENGINE_OIL_LOW, rig.engine.state.value.activeWarnings.single().code)
 
         advanceTimeBy(30_000)
         val s = rig.engine.state.value
         assertEquals(DrivingState.PARKED, s.drivingState)
         assertTrue(s.activeWarnings.single().known)
-        assertEquals(listOf(WarningCodes.TIRE_PRESSURE_LOW), s.seenWarnings)
+        assertEquals(listOf(WarningCodes.ENGINE_OIL_LOW), s.seenWarnings)
         rig.engine.stop()
     }
 

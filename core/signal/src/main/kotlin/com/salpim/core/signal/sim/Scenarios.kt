@@ -32,10 +32,10 @@ object Scenarios {
         ramp(kmh, (kmh * MS_PER_SECOND / DEPARTURE_ACCEL_KMH_PER_SEC).toLong())
     }
 
-    val TIRE_WARNING = scenario("tire_warning", "주행 중 타이어 공기압 경고") {
+    val ENGINE_OIL_WARNING = scenario("engine_oil_warning", "주행 중 엔진오일 부족") {
         departure(60f)
         hold(3_000)
-        set { copy(activeWarnings = activeWarnings + WarningCodes.TIRE_PRESSURE_LOW) }
+        set { copy(activeWarnings = activeWarnings + WarningCodes.ENGINE_OIL_LOW) }
         hold(8_000)
     }
 
@@ -52,7 +52,7 @@ object Scenarios {
 
     val PARKING_AFTER_WARNING = scenario("parking_after_warning", "경고 후 정차 · 주차") {
         departure(50f)
-        set { copy(activeWarnings = activeWarnings + WarningCodes.TIRE_PRESSURE_LOW) }
+        set { copy(activeWarnings = activeWarnings + WarningCodes.ENGINE_OIL_LOW) }
         hold(4_000)
         ramp(0f, 8_000) // 6.25 km/h/s, 급제동 임계 미만
         hold(2_000)
@@ -67,5 +67,5 @@ object Scenarios {
         hold(10_000)
     }
 
-    val all: List<Scenario> = listOf(TIRE_WARNING, HARD_BRAKE_SEQUENCE, PARKING_AFTER_WARNING, LOW_FUEL_TRIP)
+    val all: List<Scenario> = listOf(ENGINE_OIL_WARNING, HARD_BRAKE_SEQUENCE, PARKING_AFTER_WARNING, LOW_FUEL_TRIP)
 }

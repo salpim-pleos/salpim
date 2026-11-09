@@ -26,9 +26,9 @@ class ScenarioTest {
     }
 
     @Test
-    fun tireWarningAppearsWhileDriving() {
-        val frames = Scenarios.TIRE_WARNING.frames(200, Scenarios.parked())
-        val first = frames.first { WarningCodes.TIRE_PRESSURE_LOW in it.activeWarnings }
+    fun engineOilWarningAppearsWhileDriving() {
+        val frames = Scenarios.ENGINE_OIL_WARNING.frames(200, Scenarios.parked())
+        val first = frames.first { WarningCodes.ENGINE_OIL_LOW in it.activeWarnings }
         assertEquals(Gear.DRIVE, first.gear)
         assertTrue(first.speedKmh!! > 50f)
     }
@@ -36,7 +36,7 @@ class ScenarioTest {
     @Test
     fun drivingAdvancesOdometerAndBurnsFuel() {
         val start = Scenarios.parked()
-        val last = Scenarios.TIRE_WARNING.frames(200, start).last()
+        val last = Scenarios.ENGINE_OIL_WARNING.frames(200, start).last()
         assertTrue(last.odometerKm!! > start.odometerKm!!)
         assertTrue(last.fuelPercent!! < start.fuelPercent!!)
     }
@@ -53,6 +53,6 @@ class ScenarioTest {
         val last = Scenarios.PARKING_AFTER_WARNING.frames(200, Scenarios.parked()).last()
         assertEquals(Gear.PARK, last.gear)
         assertEquals(0f, last.speedKmh!!, 0.001f)
-        assertTrue(WarningCodes.TIRE_PRESSURE_LOW in last.activeWarnings)
+        assertTrue(WarningCodes.ENGINE_OIL_LOW in last.activeWarnings)
     }
 }
