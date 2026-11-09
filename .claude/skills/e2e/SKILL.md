@@ -7,10 +7,12 @@ description: 살핌 e2e 화면 테스트(app/src/androidTest)를 실행하거나
 
 ## 실행
 
-`scripts/e2e.sh`
-- adb에 기기가 연결돼 있으면 `connectedDebugAndroidTest` (Pleos 에뮬레이터를 켜 두면 그 위에서 실행)
-- 없으면 Gradle Managed Device `pixel6Api34DebugAndroidTest` (에뮬레이터 부팅 포함 수 분 소요 → background로 실행하고 완료 알림을 기다린다)
-- 결과: `app/build/outputs/androidTest-results/**/TEST-*.xml`, HTML은 `app/build/reports/androidTests/`
+`scripts/e2e.sh` (강제 선택: `E2E_TARGET=connected|managed`)
+- `adb shell`에 응답하는 기기가 있으면 `connectedDebugAndroidTest` (Pleos 에뮬레이터를 켜 두면 그 위에서 실행)
+- 없으면 Gradle Managed Device `pixel6Api34DebugAndroidTest` (에뮬레이터 부팅 포함 2~3분 → 10분 timeout)
+- 결과: `<buildDir>/app/outputs/androidTest-results/**/TEST-*.xml`. 경로에 한글이 있으면 buildDir은 `~/.salpim-build`
+- 실패가 "Failed to install APK ... Invalid name"이면 APK 경로에 비ASCII 문자가 있는 것 → 루트 `build.gradle.kts`의 buildDirectory 설정 확인
+- 끝난 뒤 직접 띄운 에뮬레이터가 남아 있으면 정리한다 (GMD는 자동 종료)
 
 ## 테스트 작성 규칙
 

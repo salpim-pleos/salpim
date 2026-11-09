@@ -82,7 +82,9 @@ app → feature/{warning,service,coach,glance} → core/{model,state,signal,ux,d
 ### 환경 주의 (Windows)
 
 - `JAVA_HOME`은 JDK 17이어야 한다.
-- 경로에 한글이 있어 `android.overridePathCheck=true`가 필요하고, `org.gradle.jvmargs`에 `-Dfile.encoding=UTF-8`을 넣으면 JVM 테스트가 `ClassNotFoundException`으로 실패한다.
+- 경로에 한글이 있으면 빌드 산출물은 루트 `build.gradle.kts` 설정으로 `~/.salpim-build/<모듈>`에 생긴다 (테스트 결과·APK·리포트도 거기). 모듈 안 `build/`를 찾지 않는다.
+- `android.overridePathCheck=true` 유지, `org.gradle.jvmargs`에 `-Dfile.encoding=UTF-8` 금지 (JVM 테스트 `ClassNotFoundException`).
+- adb에 BlueStacks 등의 가짜 기기가 보일 수 있다. e2e는 `scripts/e2e.sh`가 응답하는 기기만 고른다.
 
 ### 스킬 (`.claude/skills/`)
 

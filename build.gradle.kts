@@ -11,6 +11,20 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
 }
 
+// 프로젝트 경로에 한글 등 비ASCII 문자가 있으면 빌드 산출물만 ASCII 경로로 뺀다.
+// (adb가 비ASCII 경로의 APK를 설치하지 못하고, JVM 테스트 워커도 깨질 수 있음)
+// 직접 지정: gradle.properties 또는 -P 로 salpim.buildRoot=<경로>
+val externalBuildRoot: File? = providers.gradleProperty("salpim.buildRoot").orNull?.let(::File)
+    ?: File(System.getProperty("user.home"), ".salpim-build")
+        .takeIf { rootDir.absolutePath.any { it.code > 127 } }
+
+if (externalBuildRoot != null) {
+    allprojects {
+        val sub = if (this == rootProject) "_root" else path.removePrefix(":").replace(':', '/')
+        layout.buildDirectory.set(File(externalBuildRoot, sub))
+    }
+}
+
 // 모든 Android 모듈 공통 설정 (대회 요건: minSdk 28)
 subprojects {
     val configureAndroid: Plugin<*>.() -> Unit = {

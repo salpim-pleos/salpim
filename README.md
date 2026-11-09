@@ -50,6 +50,7 @@
 |---|---|
 | 스캐폴딩 (멀티모듈, Compose, minSdk 28) | 완료 |
 | F0 상태머신 / UxPolicy / SimulatedSignalSource + 시나리오 3개 | 완료 (단위 테스트) |
+| 테스트 환경 | 단위 38개 + e2e 5개 통과 (2026-11-09) |
 | F2 지식 베이스 초안 8종 + 해설기 + 주행/정차 UI | 초안. 문구는 차량 매뉴얼로 검증 필요, 실제 경고 매핑은 S2 이후 |
 | F4 정비소 안내 | UI·흐름 완료, NaviHelper 호출은 S5 이후 (현재 "준비 중" 응답) |
 | F3 습관 검출 + 리포트 | 초안. 임계값 튜닝 필요 |
@@ -102,14 +103,15 @@ SimulatedSignalSource ┘                     │
 | UI | Jetpack Compose (Material 3) |
 
 ```bash
-./gradlew assembleDebug                    # 디버그 APK → app/build/outputs/apk/debug/
+./gradlew assembleDebug                    # 디버그 APK → app/build/outputs/apk/debug/ (한글 경로면 ~/.salpim-build/app/outputs/apk/debug/)
 ./gradlew testDebugUnitTest lintDebug      # 커밋 전 필수 (scripts/check.sh)
 ./gradlew assembleRelease                  # 제출용 (서명 설정 TODO)
 ```
 
 Windows 주의:
 - `JAVA_HOME`이 JDK 17을 가리켜야 한다 (Java 8로는 AGP 8이 동작하지 않음).
-- 프로젝트 경로에 한글이 있으면 `gradle.properties`의 `android.overridePathCheck=true`가 필요하다. `org.gradle.jvmargs`에 `-Dfile.encoding=UTF-8`을 넣으면 한글 경로에서 테스트가 `ClassNotFoundException`으로 실패하므로 넣지 않는다. 가능하면 영문 경로(예: `C:\dev\salpim`)에서 작업한다.
+- 프로젝트 경로에 한글 등 비ASCII 문자가 있으면 **빌드 산출물이 자동으로 `~/.salpim-build/<모듈>`에 생성**된다 (adb가 한글 경로의 APK를 설치하지 못하기 때문). 소스는 그대로 두면 된다. 위치를 바꾸려면 `-Psalpim.buildRoot=<경로>`.
+- 같은 이유로 `gradle.properties`에 `android.overridePathCheck=true`가 있고, `org.gradle.jvmargs`에 `-Dfile.encoding=UTF-8`을 넣지 않는다 (넣으면 JVM 테스트가 `ClassNotFoundException`으로 실패).
 - `local.properties`(sdk.dir)는 커밋하지 않는다.
 
 ## 테스트
@@ -121,7 +123,9 @@ Windows 주의:
 | e2e 화면 테스트 | `app/src/androidTest` | `scripts/e2e.sh` |
 
 e2e는 `SimulatedSignalSource`로 신호를 넣고 실제 Activity 화면을 검증한다.
-- 연결된 기기/에뮬레이터가 있으면 `connectedDebugAndroidTest`, 없으면 Gradle Managed Device `pixel6Api34`(API 34, google 이미지)를 띄워 실행한다.
+- 응답하는 기기/에뮬레이터가 있으면 `connectedDebugAndroidTest`, 없으면 Gradle Managed Device `pixel6Api34`(API 34, google 이미지)를 띄워 실행한다. 강제 선택은 `E2E_TARGET=connected|managed scripts/e2e.sh`.
+- BlueStacks 등 다른 앱이 adb 포트를 열어 두면 가짜 기기(`emulator-5554`)가 보일 수 있다. 스크립트는 `adb shell`에 응답하지 않는 기기를 건너뛴다.
+- 최근 결과 (2026-11-09, pixel6Api34): 5/5 통과.
 - Pleos Connect 에뮬레이터를 켜 두면 그 위에서 실행된다 (자동차 기기에서는 실제 CarUxRestrictions를 쓰므로 일부 테스트는 건너뜀).
 - 검증 항목: SIMULATED 배지 상시 표시, 주행 중 한 줄 경고·상세/버튼 없음·정보 3개 이하, 주차 후 상세와 정비소 안내, 시나리오 버튼, 시스템 주행 제한 시 주행 화면 강제.
 
