@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,6 +21,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.salpim.app.MainUiState
+import com.salpim.core.designsystem.MdiIcons
 import com.salpim.core.designsystem.PrimaryButton
 import com.salpim.core.designsystem.SalpimColors
 import com.salpim.core.designsystem.SalpimDimens
@@ -49,6 +51,7 @@ fun TodoPanel(ui: MainUiState, actions: MainActions, modifier: Modifier) {
                 "가까운 주유소",
                 onClick = { actions.findNearby(PlaceCategory.GAS_STATION) },
                 modifier = Modifier.testTag("btn_find_gas"),
+                icon = MdiIcons.GasStation,
             )
         }
         ui.inputs.places?.let { PlaceList(it, ui.inputs.placesMock, actions) }
@@ -69,7 +72,15 @@ fun TodoPanel(ui: MainUiState, actions: MainActions, modifier: Modifier) {
 @Composable
 private fun WarningTodo(e: Explanation, actions: MainActions) {
     Column(Modifier.testTag("warning_detail"), verticalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap)) {
-        Text(e.oneLine.substringBefore(". "), style = SalpimType.TitleSmall, color = SalpimColors.Text)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Icon(
+                e.icon(),
+                contentDescription = null,
+                tint = e.urgency.color(),
+                modifier = Modifier.size(SalpimDimens.LineIcon),
+            )
+            Text(e.oneLine.substringBefore(". "), style = SalpimType.TitleSmall, color = SalpimColors.Text)
+        }
         Text(e.detail, style = SalpimType.Label, color = SalpimColors.TextSoft)
         e.actions.forEachIndexed { i, action ->
             Text(
@@ -83,11 +94,13 @@ private fun WarningTodo(e: Explanation, actions: MainActions) {
                 "가까운 블루핸즈로 안내",
                 onClick = { actions.findNearby(PlaceCategory.BLUE_HANDS) },
                 modifier = Modifier.testTag("btn_navigate_service"),
+                icon = MdiIcons.CarWrench,
             )
             SecondaryButton(
                 "휴대폰으로 예약",
                 onClick = actions::showReservation,
                 modifier = Modifier.testTag("btn_reservation"),
+                icon = MdiIcons.QrCode,
             )
         }
         Text("정확한 상태는 정비사가 확인해요. 이 안내는 참고용이에요.", style = SalpimType.Caption, color = SalpimColors.TextSecondary)
@@ -138,6 +151,7 @@ private fun PlaceRow(ordinal: Int, place: NearbyPlace, actions: MainActions) {
             "길 안내",
             onClick = { actions.routeTo(place) },
             modifier = Modifier.testTag("btn_route_${place.id}"),
+            icon = MdiIcons.Navigation,
         )
     }
 }

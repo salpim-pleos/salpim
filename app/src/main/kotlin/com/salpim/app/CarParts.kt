@@ -23,11 +23,12 @@ object CarParts {
         Triple(CarZone.SEAT_BELT, "안전벨트", "사고 때 몸을 붙잡아 줌"),
     )
 
-    /** 부위마다 가장 급한 문제를 붙인다. 문제가 있는 부위가 먼저 온다 */
-    fun statuses(activeWarnings: List<Explanation>): List<PartStatus> = parts
-        .map { (zone, name, meaning) ->
-            val issue = activeWarnings.filter { it.zone == zone }.minByOrNull { it.urgency.ordinal }
-            PartStatus(zone, issue?.title ?: name, issue?.plainMeaning ?: meaning, issue)
-        }
-        .sortedBy { it.issue?.urgency?.ordinal ?: Int.MAX_VALUE }
+    /**
+     * 부위마다 가장 급한 문제를 붙인다. 순서는 늘 같다 —
+     * 타일 자리가 고정돼야 아이콘 위치로 기억하고 문제 부위는 색으로 찾는다.
+     */
+    fun statuses(activeWarnings: List<Explanation>): List<PartStatus> = parts.map { (zone, name, meaning) ->
+        val issue = activeWarnings.filter { it.zone == zone }.minByOrNull { it.urgency.ordinal }
+        PartStatus(zone, name, issue?.plainMeaning ?: meaning, issue)
+    }
 }

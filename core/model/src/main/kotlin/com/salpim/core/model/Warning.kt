@@ -74,7 +74,7 @@ data class Explanation(
     val needsService: Boolean,
     /** 지식 베이스에 있는 코드인지. false면 폴백 설명 */
     val known: Boolean,
-    /** 차 그림 위치. 모르면 null */
+    /** 부위(아이콘·부품 타일). 모르면 null */
     val zone: CarZone? = null,
     /** 부품의 쉬운 설명. 예: "엔진이 잘 돌도록 돕는 기름" */
     val plainMeaning: String? = null,

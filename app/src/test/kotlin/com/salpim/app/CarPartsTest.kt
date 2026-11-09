@@ -31,14 +31,24 @@ class CarPartsTest {
     }
 
     @Test
-    fun partWithIssueComesFirstAndShowsMostUrgent() {
+    fun partWithIssueShowsMostUrgentWarning() {
         val parts = CarParts.statuses(
             listOf(
                 warning(CarZone.ENGINE, Urgency.SERVICE_SOON, "엔진오일 부족"),
                 warning(CarZone.ENGINE, Urgency.IMMEDIATE_STOP, "엔진 이상 신호"),
             ),
         )
-        assertEquals(CarZone.ENGINE, parts.first().zone)
-        assertEquals("엔진 이상 신호", parts.first().name)
+        val engine = parts.single { it.zone == CarZone.ENGINE }
+        assertEquals("엔진 이상 신호", engine.issue?.title)
+        assertEquals("엔진오일", engine.name)
+    }
+
+    @Test
+    fun partOrderStaysFixedSoTilesDoNotMove() {
+        val normal = CarParts.statuses(emptyList()).map { it.zone }
+        val withSeatBeltIssue = CarParts.statuses(
+            listOf(warning(CarZone.SEAT_BELT, Urgency.INFO, "안전벨트")),
+        ).map { it.zone }
+        assertEquals(normal, withSeatBeltIssue)
     }
 }

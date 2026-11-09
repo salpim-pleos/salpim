@@ -1,19 +1,18 @@
 package com.salpim.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,29 +21,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.salpim.app.MainUiState
 import com.salpim.app.PartStatus
-import com.salpim.core.designsystem.CarTopView
 import com.salpim.core.designsystem.SalpimColors
 import com.salpim.core.designsystem.SalpimDimens
 import com.salpim.core.designsystem.SalpimType
 import com.salpim.core.designsystem.SecondaryButton
 import com.salpim.core.designsystem.SpokenLine
+import com.salpim.core.designsystem.StatusIcon
 import com.salpim.core.designsystem.VoiceBar
 import com.salpim.core.model.Explanation
-import com.salpim.core.model.Urgency
 
 private val PARKED_HINTS = listOf("왜 그래?", "가까운 블루핸즈 찾아 줘", "얼마나 더 갈 수 있어?")
 private val CHOOSING_HINTS = listOf("첫 번째로 가 줘", "다른 데", "예약할래")
-private const val CAR_WIDTH_DP = 180
+private const val TILE_COLUMNS = 3
 
-/** 정차·주차: 내 차 상태(그림 + 부품) / 지금 할 일 / 음성 바 */
+/** 켜진 타일 뒤 면의 투명도 */
+private const val ISSUE_FILL_ALPHA = 0.12f
+
+/** 정차·주차: 내 차 상태(부품 타일) / 지금 할 일 / 음성 바 */
 @Composable
 fun StoppedScreen(ui: MainUiState, actions: MainActions) {
     Column(Modifier.fillMaxSize().testTag("screen_stopped")) {
         Row(Modifier.weight(1f).fillMaxWidth()) {
-            CarStatusColumn(ui, actions, Modifier.weight(1.1f).fillMaxHeight())
+            CarStatusColumn(ui, actions, Modifier.weight(1.25f).fillMaxHeight())
             TodoPanel(ui, actions, Modifier.weight(1f).fillMaxHeight())
         }
         ui.inputs.lastReply?.let { SpokenLine(it) }
@@ -64,42 +66,63 @@ private fun CarStatusColumn(ui: MainUiState, actions: MainActions, modifier: Mod
         verticalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap),
     ) {
         Text("내 차 상태", style = SalpimType.TitleSmall, color = SalpimColors.Text)
-        val issues = ui.parts.count { it.issue != null }
-        val summary = if (issues == 0) "${ui.parts.size}곳을 살펴봤어요. 모두 괜찮아요." else "${ui.parts.size}곳을 살펴봤어요. ${issues}곳만 점검하면 돼요."
-        Text(summary, style = SalpimType.Label, color = SalpimColors.TextSecondary)
-        Row(horizontalArrangement = Arrangement.spacedBy(SalpimDimens.SectionGap)) {
-            val top = ui.topWarning
-            CarTopView(
-                litZone = top?.zone,
-                litColor = top?.urgency?.color() ?: SalpimColors.Caution,
-                description = "내 차 그림",
-                width = CAR_WIDTH_DP.dp,
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { ui.parts.forEach { PartRow(it) } }
-        }
+        PartTiles(ui.parts, actions)
         WarningHistory(ui.warningList, actions)
         ScenarioButtons(ui, actions)
     }
 }
 
+/** 부품 6곳을 3×2 고정 자리에. 문제 부위만 긴급도 색으로 켜진다 */
 @Composable
-private fun PartRow(part: PartStatus) {
-    val issue = part.issue
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        val color = issue?.urgency?.color() ?: SalpimColors.TextTertiary
-        Box(
-            Modifier.size(
-                14.dp,
-            ).background(color, if (issue?.urgency == Urgency.IMMEDIATE_STOP) RectangleShape else CircleShape),
-        )
-        Column {
-            Text(
-                if (issue == null) "${part.name} 정상" else part.name,
-                style = SalpimType.LabelStrong,
-                color = issue?.urgency?.color() ?: SalpimColors.Text,
-            )
-            Text(part.plainMeaning, style = SalpimType.Caption, color = SalpimColors.TextSecondary)
+private fun PartTiles(parts: List<PartStatus>, actions: MainActions) {
+    Column(Modifier.testTag("part_tiles"), verticalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap)) {
+        parts.chunked(TILE_COLUMNS).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap)) {
+                row.forEach { PartTile(it, actions, Modifier.weight(1f)) }
+                repeat(TILE_COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
+            }
         }
+    }
+}
+
+@Composable
+private fun PartTile(part: PartStatus, actions: MainActions, modifier: Modifier) {
+    val issue = part.issue
+    val color = issue?.urgency?.color()
+    val tileModifier = if (issue != null && color != null) {
+        modifier
+            .background(color.copy(alpha = ISSUE_FILL_ALPHA))
+            .border(SalpimDimens.Line, color, RectangleShape)
+            .clickable(role = Role.Button) { actions.selectWarning(issue.code) }
+    } else {
+        modifier.background(SalpimColors.Surface).border(SalpimDimens.Line, SalpimColors.Line, RectangleShape)
+    }
+    Column(
+        tileModifier.heightIn(
+            min = SalpimDimens.TileHeight,
+        ).padding(SalpimDimens.ItemGap).testTag("part_${part.zone.name}"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+    ) {
+        StatusIcon(
+            issue?.icon() ?: part.zone.icon(),
+            description = null,
+            litColor = color,
+            boxSize = SalpimDimens.TileIcon,
+            iconSize = SalpimDimens.TileIcon,
+        )
+        Text(
+            part.name,
+            style = SalpimType.LabelStrong,
+            color = SalpimColors.Text,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
+        Text(
+            issue?.urgency?.label() ?: "정상",
+            style = SalpimType.Caption,
+            color = color ?: SalpimColors.TextSecondary,
+        )
     }
 }
 
@@ -128,7 +151,7 @@ private fun WarningHistory(warnings: List<Explanation>, actions: MainActions) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(e.title, style = SalpimType.Label, color = SalpimColors.Text)
-            Text(e.urgency.label(), style = SalpimType.Label, color = e.urgency.color())
+            UrgencyLabel(e.urgency)
         }
     }
 }

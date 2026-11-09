@@ -11,7 +11,7 @@
 | 기능 | 내용 |
 |---|---|
 | 주행 상태별 화면 | 주차·정차·주행을 판정해 화면 역할을 바꿉니다. 주행 중에는 입력·스크롤 없이 정보 3개만, 시스템 주행 제한(CarUxRestrictions)을 우선 적용 |
-| 차량 이상 해설 | Vehicle SDK Safety 신호(엔진오일·브레이크액·변속기오일 레벨, 엔진 이상, 워셔액, 안전벨트, 에어백)를 쉬운 말과 긴급도로 설명. 위에서 본 차 그림에서 문제 부위만 한 번 밝아지며 켜짐. 앱 내 지식 베이스로 오프라인 동작 |
+| 차량 이상 해설 | Vehicle SDK Safety 신호(엔진오일·브레이크액·변속기오일 레벨, 엔진 이상, 워셔액, 안전벨트, 에어백)를 쉬운 말과 긴급도로 설명. 문제 부위 아이콘이 한 번 밝아지며 켜지고, 주행 중에는 글 대신 아이콘·색·막대로 보여 줌. 앱 내 지식 베이스로 오프라인 동작 |
 | 주유 예측 | 이 차의 "연료 1%당 km" 기록 분포로 남은 거리를 두 단계(지난 주행의 75%·90%를 덮는 거리)로 예측하고, 결정 트리로 충분 / 가는 길에 주유 / 지금 주유를 판단 |
 | 블루핸즈 안내·예약 | 가까운 블루핸즈를 골라 NaviHelper로 길 안내, 휴대폰 QR로 공식 정비 예약 페이지 연결 |
 | 음성 제어 | "차 상태 어때?", "계속 달려도 돼?", "가까운 블루핸즈 찾아 줘", "첫 번째로 가 줘", "얼마나 더 갈 수 있어?"처럼 말로 조작하고, 답은 소리와 화면 글자로 함께 |
@@ -54,7 +54,7 @@ core/model          순수 Kotlin 모델
 core/state          주행 상태머신 (디바운스·히스테리시스)
 core/signal         신호원 — Pleos SDK 어댑터, 시뮬레이션, NaviHelper 어댑터 (SDK 타입은 이 모듈 밖으로 나가지 않음)
 core/ux             주행 제한(CarUxRestrictions) 래퍼
-core/designsystem   디자인 토큰, Asta Sans, 공용 컴포넌트, 차 그림
+core/designsystem   디자인 토큰, Asta Sans, 공용 컴포넌트, 아이콘(MDI)
 core/data           운전 기록
 feature/warning     차량 이상 해설 (지식 베이스: src/main/assets/warnings_kb.json)
 feature/fuel        주유 예측 (분위수 + 결정 트리)
@@ -70,7 +70,7 @@ scripts/check.sh    # 정적 분석(detekt·ktlint) + 단위 테스트 + Android
 scripts/e2e.sh      # 화면 흐름 테스트 (연결된 에뮬레이터 또는 Gradle Managed Device)
 ```
 
-단위 테스트 123개와 화면 흐름 테스트 6개가 있습니다 (주행 중 입력 요소 없음, 음성 명령으로 블루핸즈 찾기와 길 안내, 시스템 주행 제한 반영 등).
+단위 테스트 129개와 화면 흐름 테스트 6개가 있습니다 (주행 중 입력 요소 없음, 음성 명령으로 블루핸즈 찾기와 길 안내, 시스템 주행 제한 반영 등).
 
 ## 현재 한계
 
@@ -81,3 +81,4 @@ scripts/e2e.sh      # 화면 흐름 테스트 (연결된 에뮬레이터 또는 
 ## 라이선스 고지
 
 - 서체: [Asta Sans](https://github.com/42dot/Asta-Sans) — SIL Open Font License 1.1 (`core/designsystem/FONT-LICENSE-OFL.txt`)
+- 아이콘: [Material Design Icons](https://github.com/Templarian/MaterialDesign) (Pictogrammers) — Apache License 2.0 (`core/designsystem/ICONS-LICENSE-MDI.txt`)

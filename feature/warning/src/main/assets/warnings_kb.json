@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "_note": "Safety 공개 API(S2) 기준 초안. 문구는 차량 매뉴얼로 검증 후 확정. 단정 표현 금지, '점검 권장' 톤 유지. zone = 차 그림 위치, plainMeaning = 차를 모르는 사람용 쉬운 설명.",
+  "_note": "Safety 공개 API(S2) 기준 초안. 문구는 차량 매뉴얼로 검증 후 확정. 단정 표현 금지, '점검 권장' 톤 유지. zone = 부위(아이콘·부품 타일), plainMeaning = 차를 모르는 사람용 쉬운 설명.",
   "entries": [
     {
       "code": "ENGINE_OIL_LOW",

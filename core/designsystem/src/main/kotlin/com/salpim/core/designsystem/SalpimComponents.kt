@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -29,29 +30,47 @@ import androidx.compose.ui.unit.dp
 
 /** 주 액션: 현대 네이비 직사각형 (docs/DESIGN.md 원칙 5) */
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Box(
+fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
+    Row(
         modifier
             .heightIn(min = SalpimDimens.PrimaryButtonHeight)
             .background(SalpimColors.Action, RectangleShape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 32.dp),
-        contentAlignment = Alignment.CenterStart,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ButtonIconGap),
     ) {
+        icon?.let {
+            Icon(
+                it,
+                contentDescription = null,
+                tint = SalpimColors.OnAction,
+                modifier = Modifier.size(SalpimDimens.ButtonIcon),
+            )
+        }
         Text(text, style = SalpimType.BodyStrong, color = SalpimColors.OnAction)
     }
 }
 
 @Composable
-fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Box(
+fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
+    Row(
         modifier
             .heightIn(min = SalpimDimens.TouchMin)
             .border(SalpimDimens.Line, SalpimColors.TextTertiary, RectangleShape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 28.dp),
-        contentAlignment = Alignment.CenterStart,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ButtonIconGap),
     ) {
+        icon?.let {
+            Icon(
+                it,
+                contentDescription = null,
+                tint = SalpimColors.Text,
+                modifier = Modifier.size(SalpimDimens.ButtonIcon),
+            )
+        }
         Text(text, style = SalpimType.LabelStrong, color = SalpimColors.Text)
     }
 }
@@ -75,7 +94,7 @@ fun SpokenLine(text: String, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Icon(
-            SalpimIcons.Speaker,
+            MdiIcons.VolumeHigh,
             contentDescription = null,
             tint = SalpimColors.TextSoft,
             modifier = Modifier.size(28.dp),
@@ -137,7 +156,12 @@ private fun MicButton(phase: VoicePhase, onClick: () -> Unit) {
             .testTag("btn_mic"),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(SalpimIcons.Mic, contentDescription = null, tint = SalpimColors.OnAction, modifier = Modifier.size(32.dp))
+        Icon(
+            MdiIcons.Microphone,
+            contentDescription = null,
+            tint = SalpimColors.OnAction,
+            modifier = Modifier.size(32.dp),
+        )
     }
 }
 
