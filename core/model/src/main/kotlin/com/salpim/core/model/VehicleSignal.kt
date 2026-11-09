@@ -15,4 +15,13 @@ data class VehicleSignal(
     val parkingBrakeOn: Boolean? = null,
     val steeringAngleDeg: Float? = null,
     val activeWarnings: Set<WarningCode> = emptySet(),
+    /** 누적 주행거리. Odometer(`CAR_DRIVE`) — TODO(spike-S6): 메서드 확인 */
+    val odometerKm: Double? = null,
+    /** 연료 잔량 0..100. Fuel(`CAR_ENERGY`) — TODO(spike-S6): 메서드 확인 */
+    val fuelPercent: Double? = null,
+    /**
+     * 내비 경로의 남은 거리. 차량 신호가 아니라 NaviHelper 경로 정보지만, 같은 주기로 함께 흘려보내려고 여기 둔다 [설계].
+     * TODO(spike-S5): NaviHelper에서 남은 거리를 얻는 방법 확인
+     */
+    val routeRemainingKm: Double? = null,
 )

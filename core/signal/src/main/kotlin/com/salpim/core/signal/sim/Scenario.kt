@@ -26,7 +26,7 @@ class Scenario internal constructor(
     }
 
     private fun Op.applyTo(state: VehicleSignal, writer: FrameWriter): VehicleSignal = when (this) {
-        is Op.Set -> f(state)
+        is Op.Set -> f(state).also { writer.overrideChanged(before = state, after = it) }
         is Op.Hold -> state.also { repeat(writer.stepsFor(ms)) { writer.emit(state) } }
         is Op.Ramp -> rampFrom(state, writer)
     }
@@ -42,16 +42,36 @@ class Scenario internal constructor(
         return state
     }
 
-    /** tickMs 간격으로 timestamp를 매겨 프레임을 쌓는다 */
+    /** tickMs 간격으로 timestamp를 매기고, 주행거리·연료를 진행시켜 프레임을 쌓는다 */
     private class FrameWriter(private val tickMs: Long, startMs: Long) {
         private var timeMs = startMs
+        private var odometerKm: Double? = null
+        private var fuelPercent: Double? = null
+        private var routeRemainingKm: Double? = null
         val frames = mutableListOf<VehicleSignal>()
 
         fun stepsFor(durationMs: Long) = (durationMs / tickMs).toInt().coerceAtLeast(1)
 
+        /** 시나리오가 set으로 바꾼 값이 없으면 직전 프레임에서 이어서 진행한다 */
         fun emit(state: VehicleSignal) {
             timeMs += tickMs
-            frames += state.copy(timestampMs = timeMs)
+            val continued = state.copy(
+                odometerKm = odometerKm ?: state.odometerKm,
+                fuelPercent = fuelPercent ?: state.fuelPercent,
+                routeRemainingKm = routeRemainingKm ?: state.routeRemainingKm,
+            )
+            val advanced = SimulatedVehicleModel.advance(continued, tickMs).copy(timestampMs = timeMs)
+            odometerKm = advanced.odometerKm
+            fuelPercent = advanced.fuelPercent
+            routeRemainingKm = advanced.routeRemainingKm
+            frames += advanced
+        }
+
+        /** set 단계에서 시나리오가 직접 바꾼 값만 따른다 (나머지는 진행 중인 값 유지) */
+        fun overrideChanged(before: VehicleSignal, after: VehicleSignal) {
+            if (after.odometerKm != before.odometerKm) odometerKm = after.odometerKm
+            if (after.fuelPercent != before.fuelPercent) fuelPercent = after.fuelPercent
+            if (after.routeRemainingKm != before.routeRemainingKm) routeRemainingKm = after.routeRemainingKm
         }
     }
 }

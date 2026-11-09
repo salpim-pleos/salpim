@@ -32,7 +32,7 @@ import com.salpim.core.model.Explanation
 import com.salpim.core.model.WarningCode
 import com.salpim.feature.coach.CoachReportCard
 import com.salpim.feature.glance.GlanceRow
-import com.salpim.feature.service.ServiceCenter
+import com.salpim.feature.service.NearbyPlace
 import com.salpim.feature.service.ServiceNavigateButton
 import com.salpim.feature.warning.WarningBanner
 import com.salpim.feature.warning.WarningDetail
@@ -52,7 +52,7 @@ fun SalpimRoot(
     ui: MainUiState,
     onSelectWarning: (WarningCode) -> Unit,
     onFindServiceCenters: () -> Unit,
-    onRouteTo: (ServiceCenter) -> Unit,
+    onRouteTo: (NearbyPlace) -> Unit,
     onPlayScenario: (String) -> Unit,
     onClearHistory: () -> Unit,
 ) {
@@ -107,7 +107,7 @@ private fun SelectedWarning(
     e: Explanation,
     ui: MainUiState,
     onFindServiceCenters: () -> Unit,
-    onRouteTo: (ServiceCenter) -> Unit,
+    onRouteTo: (NearbyPlace) -> Unit,
 ) {
     WarningDetail(e) {
         if (e.needsService) {
@@ -120,7 +120,7 @@ private fun SelectedWarning(
 
 /** 블루핸즈 목록 + 휴대폰 예약 안내. mock이면 "예시 데이터"를 표시한다. */
 @Composable
-private fun ServiceCenterList(centers: List<ServiceCenter>, mock: Boolean, onRouteTo: (ServiceCenter) -> Unit) {
+private fun ServiceCenterList(centers: List<NearbyPlace>, mock: Boolean, onRouteTo: (NearbyPlace) -> Unit) {
     Column(Modifier.testTag("bluehands_list"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("가까운 블루핸즈", style = MaterialTheme.typography.titleMedium)
@@ -183,7 +183,7 @@ private fun StoppedScreen(
     ui: MainUiState,
     onSelectWarning: (WarningCode) -> Unit,
     onFindServiceCenters: () -> Unit,
-    onRouteTo: (ServiceCenter) -> Unit,
+    onRouteTo: (NearbyPlace) -> Unit,
     onPlayScenario: (String) -> Unit,
     onClearHistory: () -> Unit,
 ) {

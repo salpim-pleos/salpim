@@ -10,6 +10,8 @@ import com.salpim.core.signal.sim.SimulatedSignalSource
 import com.salpim.core.state.DrivingStateConfig
 import com.salpim.core.ux.StaticUxRestrictionsSource
 import com.salpim.feature.coach.HabitDetector
+import com.salpim.feature.fuel.FuelMonitor
+import com.salpim.feature.fuel.RefuelAdvice
 import com.salpim.feature.warning.WarningExplainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.TestScope
@@ -31,7 +33,15 @@ class SalpimEngineTest {
         val sim = SimulatedSignalSource(scope, clock = { test.testScheduler.currentTime }, tickMs = 200)
         val ux = StaticUxRestrictionsSource()
         val history = InMemoryHistoryRepository()
-        val engine = SalpimEngine(scope, sim, ux, DrivingStateConfig(), explainer, HabitDetector(), history)
+        val engine =
+            SalpimEngine(
+                scope,
+                sim,
+                ux,
+                DrivingStateConfig(),
+                SignalAnalyzers(explainer, HabitDetector(), FuelMonitor()),
+                history,
+            )
     }
 
     @Test
@@ -71,6 +81,16 @@ class SalpimEngineTest {
         rig.engine.clearHistory()
         assertTrue(rig.engine.state.value.events.isEmpty())
         assertTrue(rig.history.events.value.isEmpty())
+        rig.engine.stop()
+    }
+
+    @Test
+    fun lowFuelTripAdvisesRefuelNow() = runTest {
+        val rig = Rig(backgroundScope, this, explainer)
+        rig.engine.start()
+        rig.sim.play(Scenarios.LOW_FUEL_TRIP)
+        advanceTimeBy(20_000)
+        assertTrue(rig.engine.state.value.refuel is RefuelAdvice.RefuelNow)
         rig.engine.stop()
     }
 

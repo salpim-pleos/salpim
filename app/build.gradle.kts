@@ -50,6 +50,7 @@ dependencies {
     implementation(project(":feature:service"))
     implementation(project(":feature:coach"))
     implementation(project(":feature:glance"))
+    implementation(project(":feature:fuel"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

@@ -6,6 +6,10 @@ import com.salpim.core.model.WarningCodes
 
 /** 시연/테스트용 기본 시나리오. id는 e2e 테스트 태그(scenario_<id>)로도 쓰인다. */
 object Scenarios {
+    /** 시뮬레이션 차량의 초기 누적 주행거리와 연료 [설계] */
+    private const val START_ODOMETER_KM = 48_210.0
+    private const val START_FUEL_PERCENT = 60.0
+
     /** 주차 상태 초기값 */
     fun parked(timestampMs: Long = 0) = VehicleSignal(
         timestampMs = timestampMs,
@@ -13,6 +17,8 @@ object Scenarios {
         gear = Gear.PARK,
         parkingBrakeOn = true,
         steeringAngleDeg = 0f,
+        odometerKm = START_ODOMETER_KM,
+        fuelPercent = START_FUEL_PERCENT,
     )
 
     /** 완만한 출발 가속도. 급가속 임계(9 km/h/s) 미만 */
@@ -54,5 +60,12 @@ object Scenarios {
         hold(3_000)
     }
 
-    val all: List<Scenario> = listOf(TIRE_WARNING, HARD_BRAKE_SEQUENCE, PARKING_AFTER_WARNING)
+    /** 연료 18%로 220km 떨어진 목적지를 향해 출발 → 주유 예측이 "지금 주유"를 판단 */
+    val LOW_FUEL_TRIP = scenario("low_fuel_trip", "연료가 부족한 채로 장거리 출발") {
+        set { copy(fuelPercent = 18.0, routeRemainingKm = 220.0) }
+        departure(90f)
+        hold(10_000)
+    }
+
+    val all: List<Scenario> = listOf(TIRE_WARNING, HARD_BRAKE_SEQUENCE, PARKING_AFTER_WARNING, LOW_FUEL_TRIP)
 }

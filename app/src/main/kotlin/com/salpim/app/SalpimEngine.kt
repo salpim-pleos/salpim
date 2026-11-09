@@ -12,6 +12,8 @@ import com.salpim.core.state.DrivingStateConfig
 import com.salpim.core.state.DrivingStateMachine
 import com.salpim.core.ux.UxRestrictionsSource
 import com.salpim.feature.coach.HabitDetector
+import com.salpim.feature.fuel.FuelMonitor
+import com.salpim.feature.fuel.RefuelAdvice
 import com.salpim.feature.warning.WarningExplainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -30,6 +32,14 @@ data class EngineState(
     /** 활성/과거 포함 기록된 경고 코드 */
     val seenWarnings: List<WarningCode> = emptyList(),
     val events: List<DrivingEvent> = emptyList(),
+    val refuel: RefuelAdvice = RefuelAdvice.Unknown,
+)
+
+/** 신호 하나를 받아 해석하는 도메인 분석기 묶음 */
+data class SignalAnalyzers(
+    val explainer: WarningExplainer,
+    val habitDetector: HabitDetector,
+    val fuelMonitor: FuelMonitor,
 )
 
 /**
@@ -41,10 +51,13 @@ class SalpimEngine(
     private val signalSource: SignalSource,
     private val uxSource: UxRestrictionsSource,
     stateConfig: DrivingStateConfig,
-    private val explainer: WarningExplainer,
-    private val habitDetector: HabitDetector,
+    private val analyzers: SignalAnalyzers,
     private val history: HistoryRepository,
 ) {
+    private val explainer get() = analyzers.explainer
+    private val habitDetector get() = analyzers.habitDetector
+    private val fuelMonitor get() = analyzers.fuelMonitor
+
     private val machine = DrivingStateMachine(stateConfig)
     private val _state = MutableStateFlow(EngineState())
     val state: StateFlow<EngineState> = _state.asStateFlow()
@@ -92,6 +105,7 @@ class SalpimEngine(
             activeWarnings = explainer.explainAll(signal.activeWarnings),
             seenWarnings = currentSeen(),
             events = history.events.value,
+            refuel = fuelMonitor.onReading(signal.odometerKm, signal.fuelPercent, signal.routeRemainingKm),
         )
     }
 

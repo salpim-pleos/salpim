@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.salpim.app.ui.SalpimRoot
 import com.salpim.app.ui.SalpimTheme
+import com.salpim.feature.service.PlaceCategory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +27,7 @@ class MainActivity : ComponentActivity() {
                 SalpimRoot(
                     ui = ui,
                     onSelectWarning = vm::selectWarning,
-                    onFindServiceCenters = vm::findServiceCenters,
+                    onFindServiceCenters = { vm.findNearby(PlaceCategory.BLUE_HANDS) },
                     onRouteTo = vm::routeTo,
                     onPlayScenario = vm::playScenario,
                     onClearHistory = vm::clearHistory,

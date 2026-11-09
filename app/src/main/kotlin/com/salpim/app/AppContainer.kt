@@ -12,9 +12,11 @@ import com.salpim.core.state.DrivingStateConfig
 import com.salpim.core.ux.StaticUxRestrictionsSource
 import com.salpim.core.ux.UxRestrictionsSource
 import com.salpim.feature.coach.HabitDetector
+import com.salpim.feature.fuel.EfficiencyTracker
+import com.salpim.feature.fuel.FuelMonitor
 import com.salpim.feature.service.FavoriteShopStore
-import com.salpim.feature.service.MockServiceCenterRepository
-import com.salpim.feature.service.ServiceCenterRepository
+import com.salpim.feature.service.MockNearbyPlaceRepository
+import com.salpim.feature.service.NearbyPlaceRepository
 import com.salpim.feature.service.ServiceNavigator
 import com.salpim.feature.warning.WarningExplainer
 import kotlinx.coroutines.CoroutineScope
@@ -46,18 +48,32 @@ class AppContainer(context: Context) {
     )
     val serviceNavigator = ServiceNavigator(NaviHelperNavigationLauncher(appContext), favoriteShop)
 
-    /** 블루핸즈 목록. 현재 mock (TODO(kakao-local) — feature/service/ServiceCenters.kt) */
-    val serviceCenters: ServiceCenterRepository = MockServiceCenterRepository.fromAssets(appContext)
+    /** 블루핸즈·주유소 목록. 현재 mock (TODO(kakao-local) — feature/service/NearbyPlaces.kt) */
+    val places: NearbyPlaceRepository = MockNearbyPlaceRepository.fromAssets(appContext)
 
     val engine = SalpimEngine(
         scope = scope,
         signalSource = signalSource,
         uxSource = uxSource,
         stateConfig = DrivingStateConfig(),
-        explainer = explainer,
-        habitDetector = HabitDetector(),
+        analyzers = SignalAnalyzers(
+            explainer = explainer,
+            habitDetector = HabitDetector(),
+            fuelMonitor = FuelMonitor(EfficiencyTracker(initialKmPerPercent = demoEfficiencyHistory())),
+        ),
         history = history,
     )
+
+    /** 시뮬레이션일 때만 시연용 연비 기록을 미리 채운다 */
+    private fun demoEfficiencyHistory(): List<Double> = if (simulated != null) DEMO_EFFICIENCY_HISTORY else emptyList()
+
+    private companion object {
+        /**
+         * 시뮬레이션 시연용 과거 연비 기록(연료 1%당 km). 실제 차량 기록이 아니다.
+         * 분포: 하위 10% ≈ 5.34, 하위 25% = 8.9 → 연료 18%면 약 96~160km (캔버스 "주유소 안내" 시안과 같은 값)
+         */
+        val DEMO_EFFICIENCY_HISTORY = listOf(4.8, 5.4, 8.8, 9.2, 9.6, 10.0, 10.4, 10.8, 11.2, 11.6)
+    }
 
     /** e2e 테스트용: 신호/상태/기록 초기화 */
     fun resetForTest() {

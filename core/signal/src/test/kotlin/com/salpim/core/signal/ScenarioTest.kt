@@ -34,6 +34,21 @@ class ScenarioTest {
     }
 
     @Test
+    fun drivingAdvancesOdometerAndBurnsFuel() {
+        val start = Scenarios.parked()
+        val last = Scenarios.TIRE_WARNING.frames(200, start).last()
+        assertTrue(last.odometerKm!! > start.odometerKm!!)
+        assertTrue(last.fuelPercent!! < start.fuelPercent!!)
+    }
+
+    @Test
+    fun scenarioSetOverridesFuelAndRoute() {
+        val frames = Scenarios.LOW_FUEL_TRIP.frames(200, Scenarios.parked())
+        assertTrue(frames.first().fuelPercent!! <= 18.0)
+        assertTrue(frames.last().routeRemainingKm!! < 220.0)
+    }
+
+    @Test
     fun parkingScenarioEndsParked() {
         val last = Scenarios.PARKING_AFTER_WARNING.frames(200, Scenarios.parked()).last()
         assertEquals(Gear.PARK, last.gear)

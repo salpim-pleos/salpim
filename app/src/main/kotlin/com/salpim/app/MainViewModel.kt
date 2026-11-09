@@ -16,7 +16,8 @@ import com.salpim.feature.coach.label
 import com.salpim.feature.glance.GlanceItem
 import com.salpim.feature.glance.GlanceModel
 import com.salpim.feature.glance.GlanceTone
-import com.salpim.feature.service.ServiceCenter
+import com.salpim.feature.service.NearbyPlace
+import com.salpim.feature.service.PlaceCategory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +41,7 @@ data class MainUiState(
     val report: CoachReport = CoachReport.from(emptyList()),
     val navMessage: String? = null,
     /** "가까운 블루핸즈 찾기" 결과. null이면 아직 안 찾음 */
-    val serviceCenters: List<ServiceCenter>? = null,
+    val serviceCenters: List<NearbyPlace>? = null,
     val serviceCentersMock: Boolean = false,
     val scenarios: List<ScenarioInfo> = emptyList(),
     val playingScenario: String? = null,
@@ -51,13 +52,13 @@ private data class UserInputs(
     val selectedCode: WarningCode?,
     val navMessage: String?,
     val playingScenario: String?,
-    val serviceCenters: List<ServiceCenter>?,
+    val serviceCenters: List<NearbyPlace>?,
 )
 
 class MainViewModel(private val c: AppContainer) : ViewModel() {
     private val selectedCode = MutableStateFlow<WarningCode?>(null)
     private val navMessage = MutableStateFlow<String?>(null)
-    private val centers = MutableStateFlow<List<ServiceCenter>?>(null)
+    private val centers = MutableStateFlow<List<NearbyPlace>?>(null)
     private val scenarios = if (c.simulated != null) {
         Scenarios.all.map {
             ScenarioInfo(
@@ -89,11 +90,11 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
     }
 
     /** 정차 화면에서만 호출된다 (주행 중에는 버튼이 없음) */
-    fun findServiceCenters() {
-        viewModelScope.launch { centers.value = c.serviceCenters.nearby() }
+    fun findNearby(category: PlaceCategory) {
+        viewModelScope.launch { centers.value = c.places.nearby(category) }
     }
 
-    fun routeTo(center: ServiceCenter) {
+    fun routeTo(center: NearbyPlace) {
         viewModelScope.launch { navMessage.value = c.serviceNavigator.navigateTo(center.toDestination()) }
     }
 
@@ -125,7 +126,7 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
             report = report,
             navMessage = inputs.navMessage,
             serviceCenters = inputs.serviceCenters,
-            serviceCentersMock = c.serviceCenters.isMock,
+            serviceCentersMock = c.places.isMock,
             scenarios = scenarios,
             playingScenario = inputs.playingScenario,
         )

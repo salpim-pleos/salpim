@@ -17,9 +17,12 @@ data class EfficiencyConfig(
  * 연비를 L/100km가 아니라 %당 km로 재는 이유: 탱크 용량을 몰라도 잔량(%)만으로 남은 거리를 바로 계산할 수 있다.
  * TODO(datastore): 샘플 영속화 (현재 메모리)
  */
-class EfficiencyTracker(private val config: EfficiencyConfig = EfficiencyConfig()) {
+class EfficiencyTracker(
+    private val config: EfficiencyConfig = EfficiencyConfig(),
+    initialKmPerPercent: List<Double> = emptyList(),
+) {
     private var segmentStart: FuelReading? = null
-    private val samples = ArrayDeque<Double>()
+    private val samples = ArrayDeque(initialKmPerPercent.takeLast(config.maxSamples))
 
     val kmPerPercentSamples: List<Double> get() = samples.toList()
 
