@@ -44,6 +44,10 @@ class SalpimEngineTest {
         rig.sim.play(Scenarios.PARKING_AFTER_WARNING)
         advanceTimeBy(5_000)
         assertEquals(DrivingState.DRIVING, rig.engine.state.value.drivingState)
+
+        // 출발 가속(약 9초) 후 경고가 켜짐
+        advanceTimeBy(6_000)
+        assertEquals(DrivingState.DRIVING, rig.engine.state.value.drivingState)
         assertEquals(WarningCodes.TIRE_PRESSURE_LOW, rig.engine.state.value.activeWarnings.single().code)
 
         advanceTimeBy(30_000)
