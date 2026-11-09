@@ -52,7 +52,7 @@ class AppContainer(context: Context) {
     )
     val serviceNavigator = ServiceNavigator(NaviHelperNavigationLauncher(appContext), favoriteShop)
 
-    /** 블루핸즈·주유소 목록. 현재 mock (TODO(kakao-local) — feature/service/NearbyPlaces.kt) */
+    /** 블루핸즈·주유소 목록. 현재 mock (TODO(partner-data) — feature/service/NearbyPlaces.kt) */
     val places: NearbyPlaceRepository = MockNearbyPlaceRepository.fromAssets(appContext)
 
     /** 음성 입출력. Android 기본 엔진 — TODO(spike-S6): Pleos STT/TTS SDK ON_DEVICE로 교체 검토 */

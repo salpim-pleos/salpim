@@ -52,7 +52,7 @@
 | F0 상태머신 / UxPolicy / SimulatedSignalSource + 시나리오 3개 | 완료 (단위 테스트) |
 | 테스트 환경 | 단위 38개 + e2e 5개 통과 (2026-11-09) |
 | F2 지식 베이스 초안 8종 + 해설기 + 주행/정차 UI | 초안. 문구는 차량 매뉴얼로 검증 필요, 실제 경고 매핑은 S2 이후 |
-| F4 블루핸즈 안내·예약 | 블루핸즈 목록은 **mock**(`feature/service/src/main/assets/bluehands_mock.json`, 화면에 "예시 데이터" 표시). TODO: 카카오 로컬 API 검색, NaviHelper 길 안내(S5), 예약 QR, 제휴 예약 API |
+| F4 블루핸즈 안내·예약 | 장소 목록은 **예시 데이터**(`feature/service/src/main/assets/nearby_places_mock.json`, 화면에 "예시 데이터" 표시). 실데이터는 제휴 시 현대 블루핸즈 데이터로 교체하는 것을 전제로 외부 지도 API는 쓰지 않음. TODO: NaviHelper 길 안내·검색 화면(S5), 예약 QR |
 | 디자인 기준 | [docs/DESIGN.md](docs/DESIGN.md) (Pleos 디자인 가이드 + 현대 웹 액션 스타일). Compose 화면은 아직 이전 스타일 |
 | F3 습관 검출 + 리포트 | 초안. 임계값 튜닝 필요 |
 | F5 주유 예측 | 판단 로직 완료 (`feature/fuel`: 연비 분포 75%/90% 분위 + 결정 트리, 테스트 15개). 앱 연결·주유소 mock·실제 Fuel/Odometer API는 다음 |

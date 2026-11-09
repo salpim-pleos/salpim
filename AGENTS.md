@@ -123,7 +123,7 @@ Claude Code는 스킬로 자동 인식한다. 다른 에이전트는 해당 작�
 | `!!` | 금지 (테스트 제외) |
 | 예외 | `Exception`/`RuntimeException` 통째로 잡기 금지. 구체 타입만 |
 | 시간 | `System.currentTimeMillis()` 직접 호출 금지. clock 주입 (어댑터·진입점은 `@Suppress` + 사유) |
-| TODO | `TODO(태그):` 형식만 (예: `TODO(spike-S2)`, `TODO(kakao-local)`). 태그 없는 TODO/FIXME 금지 |
+| TODO | `TODO(태그):` 형식만 (예: `TODO(spike-S2)`, `TODO(partner-data)`). 태그 없는 TODO/FIXME 금지 |
 | 포맷 | ktlint official, 와일드카드 import 금지, 줄 140자, trailing comma |
 
 ### 7.2 리뷰 규칙

@@ -7,10 +7,10 @@ import kotlinx.serialization.json.Json
 
 /** 앱이 찾아 주는 장소 종류 */
 enum class PlaceCategory {
-    /** 블루핸즈 정비 거점 — 카카오 로컬 키워드 "블루핸즈" */
+    /** 블루핸즈 정비 거점 */
     BLUE_HANDS,
 
-    /** 주유소 — 카카오 로컬 카테고리 코드 OL7 [미확인: 공식 문서 재확인] */
+    /** 주유소 */
     GAS_STATION,
 }
 
@@ -31,11 +31,9 @@ data class NearbyPlace(
 /**
  * 주변 장소 검색 포트.
  *
- * 현재 구현은 [MockNearbyPlaceRepository] (앱 내 예시 목록).
- * TODO(kakao-local): KakaoLocalPlaceRepository — 카카오 로컬 API (현재 좌표 x=경도/y=위도, radius m).
- *   블루핸즈는 키워드 검색, 주유소는 카테고리 검색. REST 키는 local.properties, 정차 중 사용자 요청 시에만 호출,
- *   실패 시 NaviHelper requestNavigationScreen(SearchPlace(...)) 폴백 (docs/spikes/S5.md)
- * TODO(location): 현재 위치 소스 확정 (FusedLocation isSupported 또는 Android 위치) — docs/spikes/S6.md
+ * 현재 구현은 [MockNearbyPlaceRepository] (앱 내 예시 목록, 화면에 "예시 데이터" 표시).
+ * TODO(partner-data): 제휴 시 현대 블루핸즈 데이터·예약 API 구현으로 교체한다. 외부 지도 API와 위치 외부 전송은 쓰지 않는다
+ *   (docs/proposal.md 3절). 실제 장소가 필요한 시연은 NaviHelper requestNavigationScreen(SearchPlace(...)) 검색 화면을 쓴다 (S5).
  */
 interface NearbyPlaceRepository {
     /** true면 UI에 "예시 데이터"를 표시한다 */
