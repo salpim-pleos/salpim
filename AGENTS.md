@@ -84,7 +84,7 @@ app → feature/{warning,service,coach,glance} → core/{model,state,signal,ux,d
 - 화면 흐름을 바꿨으면 e2e: `scripts/e2e.sh`
 - 브랜치는 기능 단위(`feat/f2-warning` 등), 커밋은 작게
 - 레포/README/커밋에 팀명, 이메일, 개인정보, 키/시크릿 금지. 시크릿은 `local.properties`(gitignore)로
-- 진행 상황·일정이 바뀌면 README의 "진행 현황"/"일정"을 갱신한다
+- 진행 상황·일정이 바뀌면 `docs/planning.md`를 갱신한다. README는 처음 보는 사람(심사위원)용으로 짧게 유지한다
 
 ### 환경 주의 (Windows)
 

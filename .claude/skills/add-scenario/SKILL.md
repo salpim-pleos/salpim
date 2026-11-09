@@ -14,5 +14,5 @@ description: SimulatedSignalSource용 시연/테스트 시나리오를 추가한
    - `core/signal/src/test/.../ScenarioTest.kt`: 프레임 결과(최종 상태, 경고 시점) 검증
    - 이벤트가 목적이면 `feature/coach/src/test/.../HabitDetectorTest.kt`에 검출 개수 검증
    - 파이프라인 결과가 중요하면 `app/src/test/.../SalpimEngineTest.kt` (가상 시간 `advanceTimeBy`)
-4. README "신호 시뮬레이션" 표에 추가한다.
+4. README "실행" 절의 시나리오 목록에 추가한다.
 5. `verify` 스킬로 검증.
