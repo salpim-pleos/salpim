@@ -3,17 +3,20 @@ package com.salpim.app
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.salpim.core.model.DrivingEvent
 import com.salpim.core.model.DrivingState
 import com.salpim.core.model.Explanation
 import com.salpim.core.model.UxPolicy
+import com.salpim.core.model.UxRestrictionFlags
 import com.salpim.core.model.WarningCode
+import com.salpim.core.model.WarningCodes
 import com.salpim.core.signal.sim.Scenarios
 import com.salpim.feature.coach.CoachReport
 import com.salpim.feature.coach.label
-import com.salpim.feature.service.ServiceCenter
 import com.salpim.feature.glance.GlanceItem
 import com.salpim.feature.glance.GlanceModel
 import com.salpim.feature.glance.GlanceTone
+import com.salpim.feature.service.ServiceCenter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +29,7 @@ data class ScenarioInfo(val id: String, val title: String)
 
 data class MainUiState(
     val drivingState: DrivingState = DrivingState.PARKED,
-    val policy: UxPolicy = UxPolicy.resolve(DrivingState.PARKED, com.salpim.core.model.UxRestrictionFlags.NONE),
+    val policy: UxPolicy = UxPolicy.resolve(DrivingState.PARKED, UxRestrictionFlags.NONE),
     val simulated: Boolean = false,
     /** DRIVING 중 한 줄 배너로 보여 줄 가장 긴급한 경고 */
     val banner: Explanation? = null,
@@ -43,53 +46,43 @@ data class MainUiState(
     val playingScenario: String? = null,
 )
 
+/** 사용자 조작으로 바뀌는 화면 입력 */
+private data class UserInputs(
+    val selectedCode: WarningCode?,
+    val navMessage: String?,
+    val playingScenario: String?,
+    val serviceCenters: List<ServiceCenter>?,
+)
+
 class MainViewModel(private val c: AppContainer) : ViewModel() {
     private val selectedCode = MutableStateFlow<WarningCode?>(null)
     private val navMessage = MutableStateFlow<String?>(null)
     private val centers = MutableStateFlow<List<ServiceCenter>?>(null)
-    private val scenarios = if (c.simulated != null) Scenarios.all.map { ScenarioInfo(it.id, it.title) } else emptyList()
+    private val scenarios = if (c.simulated != null) {
+        Scenarios.all.map {
+            ScenarioInfo(
+                it.id,
+                it.title,
+            )
+        }
+    } else {
+        emptyList()
+    }
 
-    val ui: StateFlow<MainUiState> = combine(
-        c.engine.state,
+    private val userInputs = combine(
         selectedCode,
         navMessage,
         c.simulated?.playing ?: flowOf(null),
         centers,
-    ) { values ->
-        val engine = values[0] as EngineState
-        val selected = values[1] as WarningCode?
-        val nav = values[2] as String?
-        val playing = values[3] as String?
-        @Suppress("UNCHECKED_CAST")
-        val found = values[4] as List<ServiceCenter>?
-        val policy = UxPolicy.resolve(engine.drivingState, engine.ux)
-        val report = CoachReport.from(engine.events)
-        val banner = engine.activeWarnings.firstOrNull { it.code.value !in ENERGY_CODES }
-        val now = engine.signal?.timestampMs ?: 0
-        val recent = engine.events.lastOrNull()?.takeIf { now - it.timestampMs < RECENT_EVENT_MS }
+        ::UserInputs,
+    )
 
-        val glance = GlanceModel.build(engine.activeWarnings, report.score, policy.maxGlanceItems)
-            .filterNot { banner != null && it.id == "warning" }
-            .map { if (recent != null && it.id == "score") GlanceItem("score", "방금", recent.type.label(), GlanceTone.CAUTION) else it }
-            .take(if (banner != null) UxPolicy.DRIVING_MAX_ITEMS - 1 else UxPolicy.DRIVING_MAX_ITEMS)
-
-        val list = (engine.activeWarnings.map { it.code } + engine.seenWarnings).distinct().map(c.explainer::explain)
-        MainUiState(
-            drivingState = engine.drivingState,
-            policy = policy,
-            simulated = c.simulated != null,
-            banner = banner,
-            glance = glance,
-            warningList = list,
-            selected = list.firstOrNull { it.code == selected } ?: list.firstOrNull(),
-            report = report,
-            navMessage = nav,
-            serviceCenters = found,
-            serviceCentersMock = c.serviceCenters.isMock,
-            scenarios = scenarios,
-            playingScenario = playing,
+    val ui: StateFlow<MainUiState> = combine(c.engine.state, userInputs, ::buildState)
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            MainUiState(simulated = c.simulated != null),
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MainUiState(simulated = c.simulated != null))
 
     fun selectWarning(code: WarningCode) {
         selectedCode.value = code
@@ -114,6 +107,57 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
         navMessage.value = null
     }
 
+    private fun buildState(engine: EngineState, inputs: UserInputs): MainUiState {
+        val policy = UxPolicy.resolve(engine.drivingState, engine.ux)
+        val report = CoachReport.from(engine.events)
+        val banner = engine.activeWarnings.firstOrNull { it.code !in WarningCodes.ENERGY }
+        val warnings = (engine.activeWarnings.map { it.code } + engine.seenWarnings).distinct().map(
+            c.explainer::explain,
+        )
+        return MainUiState(
+            drivingState = engine.drivingState,
+            policy = policy,
+            simulated = c.simulated != null,
+            banner = banner,
+            glance = glanceItems(engine, report, policy, hasBanner = banner != null),
+            warningList = warnings,
+            selected = warnings.firstOrNull { it.code == inputs.selectedCode } ?: warnings.firstOrNull(),
+            report = report,
+            navMessage = inputs.navMessage,
+            serviceCenters = inputs.serviceCenters,
+            serviceCentersMock = c.serviceCenters.isMock,
+            scenarios = scenarios,
+            playingScenario = inputs.playingScenario,
+        )
+    }
+
+    /** 배너가 있으면 글랜스는 한 칸 줄여 주행 중 정보 3개를 넘지 않게 한다 */
+    private fun glanceItems(
+        engine: EngineState,
+        report: CoachReport,
+        policy: UxPolicy,
+        hasBanner: Boolean,
+    ): List<GlanceItem> {
+        val recent = recentEvent(engine)
+        val limit = if (hasBanner) UxPolicy.DRIVING_MAX_ITEMS - 1 else UxPolicy.DRIVING_MAX_ITEMS
+        return GlanceModel.build(engine.activeWarnings, report.score, policy.maxGlanceItems)
+            .filterNot { hasBanner && it.id == GLANCE_WARNING_ID }
+            .map { if (recent != null && it.id == GLANCE_SCORE_ID) recentEventItem(recent) else it }
+            .take(limit)
+    }
+
+    private fun recentEvent(engine: EngineState): DrivingEvent? {
+        val nowMs = engine.signal?.timestampMs ?: return null
+        return engine.events.lastOrNull()?.takeIf { nowMs - it.timestampMs < RECENT_EVENT_MS }
+    }
+
+    private fun recentEventItem(event: DrivingEvent) = GlanceItem(
+        GLANCE_SCORE_ID,
+        "방금",
+        event.type.label(),
+        GlanceTone.CAUTION,
+    )
+
     class Factory(private val c: AppContainer) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(c) as T
@@ -121,6 +165,8 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
 
     private companion object {
         const val RECENT_EVENT_MS = 3_000L
-        val ENERGY_CODES = com.salpim.core.model.WarningCodes.ENERGY.map { it.value }.toSet()
+        const val STOP_TIMEOUT_MS = 5_000L
+        const val GLANCE_WARNING_ID = "warning"
+        const val GLANCE_SCORE_ID = "score"
     }
 }

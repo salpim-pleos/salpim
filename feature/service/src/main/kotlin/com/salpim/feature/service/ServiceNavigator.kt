@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * 사용자가 지정한 즐겨찾기 정비소. (S5에서 NaviHelper POI 검색이 확인되면 검색으로 확장)
- * TODO: DataStore 영속화
+ * TODO(datastore): 영속화
  */
 class FavoriteShopStore(initial: ServiceDestination? = null) {
     private val _shop = MutableStateFlow(initial)

@@ -19,29 +19,41 @@ class Scenario internal constructor(
     /** initial 상태에서 시작해 tickMs 간격 프레임 목록을 만든다. timestamp는 initial 기준으로 증가. */
     fun frames(tickMs: Long, initial: VehicleSignal): List<VehicleSignal> {
         require(tickMs > 0)
-        var s = initial
-        var t = initial.timestampMs
-        val out = mutableListOf<VehicleSignal>()
-        for (op in ops) when (op) {
-            is Op.Set -> s = op.f(s)
-            is Op.Hold -> repeat(steps(op.ms, tickMs)) {
-                t += tickMs
-                out += s.copy(timestampMs = t)
-            }
-            is Op.Ramp -> {
-                val n = steps(op.ms, tickMs)
-                val from = s.speedKmh ?: 0f
-                for (i in 1..n) {
-                    t += tickMs
-                    s = s.copy(speedKmh = from + (op.toKmh - from) * i / n)
-                    out += s.copy(timestampMs = t)
-                }
-            }
-        }
-        return out
+        val writer = FrameWriter(tickMs, initial.timestampMs)
+        var state = initial
+        ops.forEach { state = it.applyTo(state, writer) }
+        return writer.frames
     }
 
-    private fun steps(ms: Long, tickMs: Long) = (ms / tickMs).toInt().coerceAtLeast(1)
+    private fun Op.applyTo(state: VehicleSignal, writer: FrameWriter): VehicleSignal = when (this) {
+        is Op.Set -> f(state)
+        is Op.Hold -> state.also { repeat(writer.stepsFor(ms)) { writer.emit(state) } }
+        is Op.Ramp -> rampFrom(state, writer)
+    }
+
+    private fun Op.Ramp.rampFrom(start: VehicleSignal, writer: FrameWriter): VehicleSignal {
+        val steps = writer.stepsFor(ms)
+        val fromKmh = start.speedKmh ?: 0f
+        var state = start
+        for (step in 1..steps) {
+            state = state.copy(speedKmh = fromKmh + (toKmh - fromKmh) * step / steps)
+            writer.emit(state)
+        }
+        return state
+    }
+
+    /** tickMs 간격으로 timestamp를 매겨 프레임을 쌓는다 */
+    private class FrameWriter(private val tickMs: Long, startMs: Long) {
+        private var timeMs = startMs
+        val frames = mutableListOf<VehicleSignal>()
+
+        fun stepsFor(durationMs: Long) = (durationMs / tickMs).toInt().coerceAtLeast(1)
+
+        fun emit(state: VehicleSignal) {
+            timeMs += tickMs
+            frames += state.copy(timestampMs = timeMs)
+        }
+    }
 }
 
 class ScenarioBuilder internal constructor() {

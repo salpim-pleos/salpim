@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.salpim.app.MainUiState
 import com.salpim.core.model.DrivingState
+import com.salpim.core.model.Explanation
 import com.salpim.core.model.WarningCode
 import com.salpim.feature.coach.CoachReportCard
 import com.salpim.feature.glance.GlanceRow
@@ -79,13 +80,57 @@ fun SimulatedBadge(modifier: Modifier = Modifier) {
     )
 }
 
+@Composable
+private fun WarningList(warnings: List<Explanation>, onSelectWarning: (WarningCode) -> Unit) {
+    Text("경고 안내", style = MaterialTheme.typography.titleLarge)
+    if (warnings.isEmpty()) {
+        Text("받은 경고가 없어요", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("no_warnings"))
+    }
+    warnings.forEach { e ->
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                .clickable { onSelectWarning(e.code) }
+                .padding(16.dp)
+                .testTag("warning_item_${e.code.value}"),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(e.title, style = MaterialTheme.typography.titleMedium)
+            Text(e.urgency.label(), color = e.urgency.color())
+        }
+    }
+}
+
+@Composable
+private fun SelectedWarning(
+    e: Explanation,
+    ui: MainUiState,
+    onFindServiceCenters: () -> Unit,
+    onRouteTo: (ServiceCenter) -> Unit,
+) {
+    WarningDetail(e) {
+        if (e.needsService) {
+            ServiceNavigateButton(onFindServiceCenters)
+            ui.serviceCenters?.let { ServiceCenterList(it, ui.serviceCentersMock, onRouteTo) }
+        }
+        ui.navMessage?.let { Text(it, modifier = Modifier.testTag("nav_message")) }
+    }
+}
+
 /** 블루핸즈 목록 + 휴대폰 예약 안내. mock이면 "예시 데이터"를 표시한다. */
 @Composable
 private fun ServiceCenterList(centers: List<ServiceCenter>, mock: Boolean, onRouteTo: (ServiceCenter) -> Unit) {
     Column(Modifier.testTag("bluehands_list"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("가까운 블루핸즈", style = MaterialTheme.typography.titleMedium)
-            if (mock) Text("예시 데이터", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag("badge_mock"))
+            if (mock) {
+                Text(
+                    "예시 데이터",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("badge_mock"),
+                )
+            }
         }
         centers.forEach { c ->
             Row(
@@ -151,33 +196,10 @@ private fun StoppedScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(ui.drivingState.label(), style = MaterialTheme.typography.titleMedium)
-            Text("경고 안내", style = MaterialTheme.typography.titleLarge)
-            if (ui.warningList.isEmpty()) {
-                Text("받은 경고가 없어요", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("no_warnings"))
-            }
-            ui.warningList.forEach { e ->
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-                        .clickable { onSelectWarning(e.code) }
-                        .padding(16.dp)
-                        .testTag("warning_item_${e.code.value}"),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(e.title, style = MaterialTheme.typography.titleMedium)
-                    Text(e.urgency.label(), color = e.urgency.color())
-                }
-            }
+            WarningList(ui.warningList, onSelectWarning)
             ui.selected?.let { e ->
                 HorizontalDivider()
-                WarningDetail(e) {
-                    if (e.needsService) {
-                        ServiceNavigateButton(onFindServiceCenters)
-                        ui.serviceCenters?.let { ServiceCenterList(it, ui.serviceCentersMock, onRouteTo) }
-                    }
-                    ui.navMessage?.let { Text(it, modifier = Modifier.testTag("nav_message")) }
-                }
+                SelectedWarning(e, ui, onFindServiceCenters, onRouteTo)
             }
         }
         Column(
@@ -192,7 +214,10 @@ private fun StoppedScreen(
                 HorizontalDivider()
                 Text("시뮬레이션 시나리오", style = MaterialTheme.typography.titleMedium)
                 ui.scenarios.forEach { s ->
-                    OutlinedButton(onClick = { onPlayScenario(s.id) }, modifier = Modifier.testTag("scenario_${s.id}")) {
+                    OutlinedButton(
+                        onClick = { onPlayScenario(s.id) },
+                        modifier = Modifier.testTag("scenario_${s.id}"),
+                    ) {
                         Text(if (ui.playingScenario == s.id) "재생 중: ${s.title}" else s.title)
                     }
                 }

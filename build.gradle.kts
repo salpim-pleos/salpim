@@ -9,6 +9,20 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.detekt) apply false
+}
+
+// 클린 코드 규칙 (AGENTS.md 7절): 모든 모듈에 detekt + ktlint(formatting). `./gradlew detekt`
+subprojects {
+    apply(plugin = "io.gitlab.arturbosch.detekt")
+    extensions.configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
+        buildUponDefaultConfig = true
+        config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+        parallel = true
+    }
+    dependencies {
+        add("detektPlugins", rootProject.libs.detekt.formatting)
+    }
 }
 
 // 프로젝트 경로에 한글 등 비ASCII 문자가 있으면 빌드 산출물만 ASCII 경로로 뺀다.

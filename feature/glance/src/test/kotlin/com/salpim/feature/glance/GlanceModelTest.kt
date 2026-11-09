@@ -21,7 +21,10 @@ class GlanceModelTest {
     @Test
     fun mostUrgentVehicleWarningIsShown() {
         val items = GlanceModel.build(
-            listOf(exp(WarningCodes.TIRE_PRESSURE_LOW, Urgency.SERVICE_SOON), exp(WarningCodes.BRAKE_SYSTEM, Urgency.IMMEDIATE_STOP, "브레이크")),
+            listOf(
+                exp(WarningCodes.TIRE_PRESSURE_LOW, Urgency.SERVICE_SOON),
+                exp(WarningCodes.BRAKE_SYSTEM, Urgency.IMMEDIATE_STOP, "브레이크"),
+            ),
             90,
         )
         assertEquals("브레이크", items.first { it.id == "warning" }.value)

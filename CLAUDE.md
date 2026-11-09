@@ -6,4 +6,5 @@
 
 ## Claude Code 전용
 
-- 작업 절차는 `.claude/skills/`에 스킬로 있다: `verify`, `e2e`, `spike`, `add-scenario`, `warning-kb`
+- 작업 절차는 `.claude/skills/`에 스킬로 있다: `verify`, `e2e`, `spike`, `add-scenario`, `warning-kb`, `clean-code`
+- 코드를 쓰기 전후로 `clean-code` 스킬(AGENTS.md 7절)을 따른다

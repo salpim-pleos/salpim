@@ -11,12 +11,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.salpim.core.designsystem.SalpimColors
 import com.salpim.core.model.Explanation
 import com.salpim.core.model.Urgency
 import com.salpim.core.model.WarningCodes
@@ -57,17 +57,20 @@ object GlanceModel {
                 id = "score",
                 label = "오늘의 안전 점수",
                 value = "${safetyScore}점",
-                tone = if (safetyScore >= 80) GlanceTone.OK else GlanceTone.CAUTION,
+                tone = if (safetyScore >= GOOD_SCORE) GlanceTone.OK else GlanceTone.CAUTION,
             ),
         )
-        return items.take(maxItems.coerceAtMost(3))
+        return items.take(maxItems.coerceAtMost(MAX_ITEMS))
     }
+
+    private const val MAX_ITEMS = 3
+    private const val GOOD_SCORE = 80
 }
 
 private fun GlanceTone.color() = when (this) {
-    GlanceTone.OK -> Color(0xFF66BB6A)
-    GlanceTone.CAUTION -> Color(0xFFFFB300)
-    GlanceTone.ALERT -> Color(0xFFE53935)
+    GlanceTone.OK -> SalpimColors.Ok
+    GlanceTone.CAUTION -> SalpimColors.Caution
+    GlanceTone.ALERT -> SalpimColors.Urgent
 }
 
 /** 큰 글씨, 입력 없음, 스크롤 없음 */

@@ -49,7 +49,9 @@ internal data class CenterEntry(
 )
 
 /** 예시 목록. 실제 지점 정보가 아니다. */
-class MockServiceCenterRepository internal constructor(private val centers: List<ServiceCenter>) : ServiceCenterRepository {
+class MockServiceCenterRepository internal constructor(
+    private val centers: List<ServiceCenter>,
+) : ServiceCenterRepository {
     override val isMock: Boolean = true
 
     override suspend fun nearby(limit: Int): List<ServiceCenter> =

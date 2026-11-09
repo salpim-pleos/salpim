@@ -15,6 +15,7 @@ dependencies {
     api(project(":core:model"))
     api(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
+    implementation(project(":core:designsystem"))
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)

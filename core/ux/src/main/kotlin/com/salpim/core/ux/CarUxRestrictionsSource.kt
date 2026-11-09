@@ -34,10 +34,17 @@ internal class CarUxRestrictionsSource(private val context: Context) : UxRestric
             m.currentCarUxRestrictions?.let { _flags.value = it.toFlags() }
             car = c
             manager = m
-        } catch (e: RuntimeException) {
-            Log.w(TAG, "CarUxRestrictionsManager unavailable; applying restricted policy", e)
-            _flags.value = UxRestrictionFlags(requiresDistractionOptimization = true)
+        } catch (e: IllegalStateException) {
+            fallBackToRestricted(e)
+        } catch (e: SecurityException) {
+            fallBackToRestricted(e)
         }
+    }
+
+    /** 연결 실패 시 안전 쪽(DO 필요)으로 둔다 */
+    private fun fallBackToRestricted(cause: Exception) {
+        Log.w(TAG, "CarUxRestrictionsManager unavailable; applying restricted policy", cause)
+        _flags.value = UxRestrictionFlags(requiresDistractionOptimization = true)
     }
 
     override fun stop() {
@@ -56,7 +63,14 @@ internal class CarUxRestrictionsSource(private val context: Context) : UxRestric
             noVideo = has(CarUxRestrictions.UX_RESTRICTIONS_NO_VIDEO),
             limitStringLength = has(CarUxRestrictions.UX_RESTRICTIONS_LIMIT_STRING_LENGTH),
             limitContent = has(CarUxRestrictions.UX_RESTRICTIONS_LIMIT_CONTENT),
-            maxStringLength = if (has(CarUxRestrictions.UX_RESTRICTIONS_LIMIT_STRING_LENGTH)) maxRestrictedStringLength else null,
+            maxStringLength = if (has(
+                    CarUxRestrictions.UX_RESTRICTIONS_LIMIT_STRING_LENGTH,
+                )
+            ) {
+                maxRestrictedStringLength
+            } else {
+                null
+            },
         )
     }
 

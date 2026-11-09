@@ -15,11 +15,15 @@ object Scenarios {
         steeringAngleDeg = 0f,
     )
 
-    /** 완만한 출발 (6 km/h/s, 급가속 임계 미만) */
+    /** 완만한 출발 가속도. 급가속 임계(9 km/h/s) 미만 */
+    private const val DEPARTURE_ACCEL_KMH_PER_SEC = 6f
+    private const val DEPARTURE_PAUSE_MS = 600L
+    private const val MS_PER_SECOND = 1000f
+
     private fun ScenarioBuilder.departure(kmh: Float) {
         set { copy(gear = Gear.DRIVE, parkingBrakeOn = false) }
-        hold(600)
-        ramp(kmh, (kmh * 1000 / 6f).toLong())
+        hold(DEPARTURE_PAUSE_MS)
+        ramp(kmh, (kmh * MS_PER_SECOND / DEPARTURE_ACCEL_KMH_PER_SEC).toLong())
     }
 
     val TIRE_WARNING = scenario("tire_warning", "주행 중 타이어 공기압 경고") {

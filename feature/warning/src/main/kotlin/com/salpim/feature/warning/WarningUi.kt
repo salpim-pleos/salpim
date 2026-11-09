@@ -20,14 +20,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.salpim.core.designsystem.SalpimColors
 import com.salpim.core.model.Explanation
 import com.salpim.core.model.Urgency
 import com.salpim.core.model.ellipsize
 
 fun Urgency.color(): Color = when (this) {
-    Urgency.IMMEDIATE_STOP -> Color(0xFFE53935)
-    Urgency.SERVICE_SOON -> Color(0xFFFFB300)
-    Urgency.INFO -> Color(0xFF42A5F5)
+    Urgency.IMMEDIATE_STOP -> SalpimColors.Urgent
+    Urgency.SERVICE_SOON -> SalpimColors.Caution
+    Urgency.INFO -> SalpimColors.Notice
 }
 
 fun Urgency.label(): String = when (this) {
@@ -66,7 +67,11 @@ fun WarningDetail(explanation: Explanation, modifier: Modifier = Modifier, foote
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             UrgencyDot(explanation.urgency)
             Text(explanation.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text(explanation.urgency.label(), color = explanation.urgency.color(), style = MaterialTheme.typography.titleMedium)
+            Text(
+                explanation.urgency.label(),
+                color = explanation.urgency.color(),
+                style = MaterialTheme.typography.titleMedium,
+            )
         }
         Text(explanation.detail, style = MaterialTheme.typography.bodyLarge)
         if (explanation.causes.isNotEmpty()) {

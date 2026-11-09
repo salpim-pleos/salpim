@@ -6,7 +6,7 @@ description: 살핌 커밋 전 검증. 전체 단위 테스트와 lint를 돌리
 # verify
 
 1. JDK 17 확인: `"$JAVA_HOME/bin/java" -version`. 17이 아니면 멈추고 사용자에게 JDK 17 경로를 묻는다 (PATH의 Java 8로는 AGP 8이 동작하지 않음).
-2. 실행: `scripts/check.sh` (= `./gradlew testDebugUnitTest lintDebug --continue`). 첫 실행은 수 분 걸리니 timeout을 넉넉히(10분) 준다.
+2. 실행: `scripts/check.sh` (= `./gradlew detekt testDebugUnitTest lintDebug --continue`). 첫 실행은 수 분 걸리니 timeout을 넉넉히(10분) 준다.
 3. 결과 요약:
    - buildDir: 프로젝트 경로에 한글이 있으면 `~/.salpim-build/<모듈>`, 아니면 각 모듈 `build/`
    - 테스트: `<buildDir>/test-results/*/TEST-*.xml`에서 클래스별 tests/failures 집계

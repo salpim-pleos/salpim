@@ -79,7 +79,7 @@ app → feature/{warning,service,coach,glance} → core/{model,state,signal,ux,d
 
 ## 6. 작업 방식
 
-- 커밋 전: `./gradlew testDebugUnitTest lintDebug` (또는 `scripts/check.sh`). 실패한 상태로 커밋하지 않는다.
+- 커밋 전: `scripts/check.sh` (= `./gradlew detekt testDebugUnitTest lintDebug`). 실패한 상태로 커밋하지 않는다. 포맷은 `./gradlew detekt --auto-correct`로 자동 수정
 - 화면 흐름을 바꿨으면 e2e: `scripts/e2e.sh`
 - 브랜치는 기능 단위(`feat/f2-warning` 등), 커밋은 작게
 - 레포/README/커밋에 팀명, 이메일, 개인정보, 키/시크릿 금지. 시크릿은 `local.properties`(gitignore)로
@@ -103,3 +103,37 @@ Claude Code는 스킬로 자동 인식한다. 다른 에이전트는 해당 작�
 | `spike` | spike 결과 기록 |
 | `add-scenario` | 시뮬레이션 시나리오 추가 |
 | `warning-kb` | 경고 지식 베이스 항목 추가/수정 |
+| `clean-code` | 코드 작성·리뷰 시 7절 규칙 점검 |
+
+## 7. 클린 코드 규칙
+
+기계가 잡는 규칙은 `config/detekt/detekt.yml`(detekt + ktlint official)에 있고 `scripts/check.sh`가 막는다. 숫자를 바꾸면 이 표와 설정 파일을 같이 고친다. 나머지는 리뷰에서 지킨다.
+
+### 7.1 자동 검사 (detekt)
+
+| 항목 | 기준 |
+|---|---|
+| 함수 길이 | 40줄 이하 (Composable은 리뷰로 80줄 이하) |
+| 파라미터 | 함수 6개, 생성자 8개 이하 (기본값 있는 파라미터·Composable 제외) |
+| 순환 복잡도 / 중첩 / 조건 | 10 이하 / 3단계 이하 / 조건식 항 4개 이하 |
+| return | 3개 이하 (가드 절 제외) |
+| 클래스 / 파일 함수 수 | 400줄 이하 / 공개 함수 15개 이하 |
+| 매직 넘버 | 금지. 이름 붙은 상수나 `Config` data class로 (Composable의 dp/sp는 디자인 토큰으로 옮기는 중) |
+| `!!` | 금지 (테스트 제외) |
+| 예외 | `Exception`/`RuntimeException` 통째로 잡기 금지. 구체 타입만 |
+| 시간 | `System.currentTimeMillis()` 직접 호출 금지. clock 주입 (어댑터·진입점은 `@Suppress` + 사유) |
+| TODO | `TODO(태그):` 형식만 (예: `TODO(spike-S2)`, `TODO(kakao-local)`). 태그 없는 TODO/FIXME 금지 |
+| 포맷 | ktlint official, 와일드카드 import 금지, 줄 140자, trailing comma |
+
+### 7.2 리뷰 규칙
+
+1. **이름이 설명한다.** 단위는 이름에 붙인다 (`timestampMs`, `speedKmh`, `rangeKm`). 한 글자 이름은 람다·인덱스에서만
+2. **한 함수는 한 가지.** 계산과 부수 효과(저장, 내비 호출, 로그)를 섞지 않는다. 판단 로직은 순수 함수로 빼고 테스트한다
+3. **상태는 불변 data class, 경우의 수는 sealed/enum.** `Boolean` 플래그 여러 개로 상태를 표현하지 않는다
+4. **예상 가능한 실패는 결과 타입으로** (`NavResult`처럼). 예외는 진짜 예외 상황에만
+5. **계층 경계를 지킨다.** SDK 타입은 `core/signal`, Car API는 `core/ux`, Android·Compose 의존은 UI 계층. 도메인 로직(`core/model`, `core/state`, 각 feature의 판단 로직)은 순수 Kotlin
+6. **ViewModel은 조합만.** 계산은 도메인 함수에 맡기고 ViewModel은 흐름을 묶어 UI 상태로 바꾼다
+7. **화면 수치는 토큰으로.** 색·글자 크기·간격은 `core/designsystem` 토큰을 쓴다 (`docs/DESIGN.md`)
+8. **주석은 왜(why)만.** 무엇(what)은 이름으로. 출처·확인 상태는 [확인됨]/[미확인]/[설계] 표기
+9. **테스트 먼저 또는 함께.** 새 판단 로직은 경계값 테스트를 붙인다. 테스트 이름은 행동을 서술한다 (`belowEnterThresholdDoesNotDrive`)
+10. **죽은 코드·주석 처리한 코드 금지.** 필요하면 git 이력으로

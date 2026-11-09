@@ -1,0 +1,92 @@
+# 살핌 클린 코드 규칙 (AGENTS.md 7절). detekt 기본 규칙 위에 덮어쓴다 (buildUponDefaultConfig).
+# 숫자를 바꾸면 AGENTS.md 7절도 같이 고친다.
+
+complexity:
+  LongMethod:
+    threshold: 40
+    ignoreAnnotated: ['Composable']   # Compose 화면 함수는 아래 ComposableLongMethod 기준(80줄)으로 리뷰
+  LongParameterList:
+    functionThreshold: 6
+    constructorThreshold: 8
+    ignoreDefaultParameters: true
+    ignoreAnnotated: ['Composable']
+  CyclomaticComplexMethod:
+    threshold: 10
+    ignoreSimpleWhenEntries: true
+  NestedBlockDepth:
+    threshold: 3
+  LargeClass:
+    threshold: 400
+  TooManyFunctions:
+    thresholdInFiles: 15
+    thresholdInClasses: 15
+    ignorePrivate: true
+  ComplexCondition:
+    threshold: 4
+
+style:
+  MagicNumber:
+    ignoreAnnotated: ['Composable', 'Preview']   # dp/sp 수치는 디자인 토큰 파일(ui/theme)로 모으는 것을 리뷰에서 확인
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreEnums: true
+    ignoreNamedArgument: true
+    excludes: ['**/test/**', '**/androidTest/**']
+  MaxLineLength:
+    maxLineLength: 140
+  ReturnCount:
+    max: 3
+    excludeGuardClauses: true
+  ForbiddenComment:
+    # TODO는 TODO(태그) 형식만 허용 — 예: TODO(spike-S2), TODO(kakao-local)
+    comments:
+      - value: 'TODO:'
+        reason: 'TODO(태그): 형식으로 쓴다'
+      - value: 'FIXME'
+        reason: '이슈로 남기거나 TODO(태그)로'
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
+  WildcardImport:
+    active: true
+  ForbiddenMethodCall:
+    active: true
+    methods:
+      - value: 'java.lang.System.currentTimeMillis'
+        reason: '시간은 주입한 clock으로 (어댑터·앱 진입점에서만 허용, @Suppress 사유 필수)'
+      - value: 'kotlin.io.println'
+        reason: '로그는 android.util.Log 또는 제거'
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][_A-Z0-9]*'
+
+potential-bugs:
+  UnsafeCallOnNullableType:      # !! 금지 (테스트 제외)
+    active: true
+    excludes: ['**/test/**', '**/androidTest/**']
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: true
+    allowedExceptionNameRegex: '_|(ignore|expected).*'
+
+formatting:
+  # ktlint (official code style)
+  active: true
+  autoCorrect: true
+  FunctionNaming:
+    active: false            # Composable 대문자 함수 허용
+  Filename:
+    active: true
+  TrailingCommaOnCallSite:
+    active: true
+    useTrailingCommaOnCallSite: true
+  TrailingCommaOnDeclarationSite:
+    active: true
+    useTrailingCommaOnDeclarationSite: true
+  MaximumLineLength:
+    maxLineLength: 140
+  NoWildcardImports:
+    active: true
