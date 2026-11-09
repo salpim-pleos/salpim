@@ -55,6 +55,8 @@
 | F4 블루핸즈 안내·예약 | 블루핸즈 목록은 **mock**(`feature/service/src/main/assets/bluehands_mock.json`, 화면에 "예시 데이터" 표시). TODO: 카카오 로컬 API 검색, NaviHelper 길 안내(S5), 예약 QR, 제휴 예약 API |
 | 디자인 기준 | [docs/DESIGN.md](docs/DESIGN.md) (Pleos 디자인 가이드 + 현대 웹 액션 스타일). Compose 화면은 아직 이전 스타일 |
 | F3 습관 검출 + 리포트 | 초안. 임계값 튜닝 필요 |
+| F5 주유 예측 | 판단 로직 완료 (`feature/fuel`: 연비 분포 75%/90% 분위 + 결정 트리, 테스트 15개). 앱 연결·주유소 mock·실제 Fuel/Odometer API는 다음 |
+| 클린 코드 | AGENTS.md 7절 + detekt/ktlint (`scripts/check.sh`에서 강제) |
 | F1 글랜스 | 초안 |
 | Pleos SDK 연동 (`PleosSignalSource`) | 미착수 — S2/S3/S6 대기 |
 | Day-0 spike S1~S6 | 문서 조사 완료 (2026-11-09), 에뮬레이터 확인 대기 → [docs/spikes](docs/spikes). **S2/S3 결과로 F2·F3 범위 조정 필요** |

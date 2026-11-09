@@ -61,6 +61,7 @@ app → feature/{warning,service,coach,glance} → core/{model,state,signal,ux,d
 | F4 | "정비소로 안내" → NaviHelper 목적지 설정. POI 검색 없으면 즐겨찾기 정비소 (S5) | 예약은 범위 밖 |
 | F3 | 급제동/급가속(속도 변화율 [설계]), 급조향(Steeringwheel). 임계값은 `HabitConfig` | 시나리오 입력에 대해 이벤트가 재현 가능하게 검출 |
 | F1 | 주행 중 최대 3개: 활성 경고, 연료/배터리, 안전 점수. 속도/RPM 중복 금지, 앱 영역만 | 항목 3개 초과 금지 |
+| F5 | 주유 예측: 연료 1%당 km 샘플 분포 → 75%(하위 25% 분위)/90%(하위 10% 분위) 남은 거리 → `RefuelAdvisor` 결정 트리 → 주유소 안내 | 분위수·결정 트리 경계값 단위 테스트, 샘플 부족 시 기본 연비 폴백 |
 
 경고 코드(`WarningCodes`)는 앱 내부 코드다. Safety/Tire API 값과의 매핑은 S2 이후 `core/signal`에서 한다.
 
