@@ -12,6 +12,7 @@ object SalpimColors {
     val SurfaceRaised = Color(0xFF313236) // Pleos basic_100
     val Line = Color(0xFF313236)
     val Track = Color(0xFF44464E) // Pleos basic_200
+    val CarBody = Color(0xFF2E3036)
 
     val Text = Color(0xFFF7F8FA) // Pleos basic_800
     val TextSoft = Color(0xFFC7C9CE) // Pleos basic_500

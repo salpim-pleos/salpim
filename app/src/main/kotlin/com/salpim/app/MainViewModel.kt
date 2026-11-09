@@ -3,7 +3,13 @@ package com.salpim.app
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.salpim.core.model.DrivingEvent
+import com.salpim.app.ui.MainActions
+import com.salpim.app.voice.VoiceAssistant
+import com.salpim.app.voice.VoiceController
+import com.salpim.app.voice.VoiceEffect
+import com.salpim.app.voice.VoiceFacts
+import com.salpim.app.voice.VoiceReply
+import com.salpim.core.designsystem.VoicePhase
 import com.salpim.core.model.DrivingState
 import com.salpim.core.model.Explanation
 import com.salpim.core.model.UxPolicy
@@ -11,18 +17,18 @@ import com.salpim.core.model.UxRestrictionFlags
 import com.salpim.core.model.WarningCode
 import com.salpim.core.signal.sim.Scenarios
 import com.salpim.feature.coach.CoachReport
-import com.salpim.feature.coach.label
-import com.salpim.feature.glance.GlanceItem
-import com.salpim.feature.glance.GlanceModel
-import com.salpim.feature.glance.GlanceTone
+import com.salpim.feature.fuel.RefuelAdvice
 import com.salpim.feature.service.NearbyPlace
 import com.salpim.feature.service.PlaceCategory
+import com.salpim.feature.voice.DialogContext
+import com.salpim.feature.voice.VoiceDialog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ScenarioInfo(val id: String, val title: String)
@@ -31,137 +37,152 @@ data class MainUiState(
     val drivingState: DrivingState = DrivingState.PARKED,
     val policy: UxPolicy = UxPolicy.resolve(DrivingState.PARKED, UxRestrictionFlags.NONE),
     val simulated: Boolean = false,
-    /** DRIVING 중 한 줄 배너로 보여 줄 가장 긴급한 경고 */
-    val banner: Explanation? = null,
-    /** DRIVING 중 표시 항목. 배너와 합쳐 최대 3개 */
-    val glance: List<GlanceItem> = emptyList(),
+    /** 지금 켜진 경고 중 가장 급한 것 */
+    val topWarning: Explanation? = null,
+    val parts: List<PartStatus> = CarParts.statuses(emptyList()),
+    val fuel: FuelSummary? = null,
+    val refuel: RefuelAdvice = RefuelAdvice.Unknown,
+    val report: CoachReport = CoachReport.from(emptyList()),
+    /** 정차 화면 목록: 켜진 경고 + 오늘 받은 경고 */
     val warningList: List<Explanation> = emptyList(),
     val selected: Explanation? = null,
-    val report: CoachReport = CoachReport.from(emptyList()),
-    val navMessage: String? = null,
-    /** "가까운 블루핸즈 찾기" 결과. null이면 아직 안 찾음 */
-    val serviceCenters: List<NearbyPlace>? = null,
-    val serviceCentersMock: Boolean = false,
+    val inputs: UserInputs = UserInputs(),
+    val voicePhase: VoicePhase = VoicePhase.IDLE,
+    val partialText: String? = null,
     val scenarios: List<ScenarioInfo> = emptyList(),
     val playingScenario: String? = null,
 )
 
-/** 사용자 조작으로 바뀌는 화면 입력 */
-private data class UserInputs(
-    val selectedCode: WarningCode?,
-    val navMessage: String?,
-    val playingScenario: String?,
-    val serviceCenters: List<NearbyPlace>?,
+/** 사용자 조작(터치·음성)으로 바뀌는 화면 상태 */
+data class UserInputs(
+    val selectedCode: WarningCode? = null,
+    val navMessage: String? = null,
+    /** 찾은 장소. null이면 아직 안 찾음 */
+    val places: List<NearbyPlace>? = null,
+    val placesCategory: PlaceCategory? = null,
+    val placesMock: Boolean = false,
+    val showReservation: Boolean = false,
+    /** 앱이 마지막으로 한 말 (화면에도 남긴다) */
+    val lastReply: String? = null,
 )
 
-class MainViewModel(private val c: AppContainer) : ViewModel() {
-    private val selectedCode = MutableStateFlow<WarningCode?>(null)
-    private val navMessage = MutableStateFlow<String?>(null)
-    private val centers = MutableStateFlow<List<NearbyPlace>?>(null)
-    private val scenarios = if (c.simulated != null) {
-        Scenarios.all.map {
-            ScenarioInfo(
-                it.id,
-                it.title,
-            )
-        }
-    } else {
-        emptyList()
-    }
+class MainViewModel(private val c: AppContainer) : ViewModel(), MainActions {
+    private val inputs = MutableStateFlow(UserInputs(placesMock = c.places.isMock))
+    private val scenarios = scenarioInfos()
 
-    private val userInputs = combine(
-        selectedCode,
-        navMessage,
+    private val assistant = VoiceAssistant()
+    private val dialog = VoiceDialog()
+    private var dialogContext: DialogContext = DialogContext.Idle
+    private var pendingEffect: VoiceEffect? = null
+    private val voice = VoiceController(viewModelScope, c.speechInput, c.speechOutput, onHeard = ::handleHeard)
+
+    val ui: StateFlow<MainUiState> = combine(
+        c.engine.state,
+        inputs,
         c.simulated?.playing ?: flowOf(null),
-        centers,
-        ::UserInputs,
-    )
-
-    val ui: StateFlow<MainUiState> = combine(c.engine.state, userInputs, ::buildState)
+        voice.phase,
+        voice.partialText,
+    ) { engine, userInputs, playing, phase, partial -> buildState(engine, userInputs, playing, phase, partial) }
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
             MainUiState(simulated = c.simulated != null),
         )
 
-    fun selectWarning(code: WarningCode) {
-        selectedCode.value = code
-    }
+    override fun onMic() = voice.toggleListening()
 
-    /** 정차 화면에서만 호출된다 (주행 중에는 버튼이 없음) */
-    fun findNearby(category: PlaceCategory) {
-        viewModelScope.launch { centers.value = c.places.nearby(category) }
-    }
+    /** 음성 예시 칩은 그 말을 한 것과 같다 (마이크 없이도 같은 흐름을 쓴다) */
+    override fun onHint(text: String) = handleHeard(text)
 
-    fun routeTo(center: NearbyPlace) {
-        viewModelScope.launch { navMessage.value = c.serviceNavigator.navigateTo(center.toDestination()) }
-    }
+    override fun selectWarning(code: WarningCode) = inputs.update { it.copy(selectedCode = code) }
 
-    fun playScenario(id: String) {
+    override fun findNearby(category: PlaceCategory) = runEffect(VoiceEffect.FindPlaces(category))
+
+    override fun routeTo(place: NearbyPlace) = runEffect(VoiceEffect.RouteTo(place))
+
+    override fun showReservation() = runEffect(VoiceEffect.ShowReservation)
+
+    override fun playScenario(id: String) {
         val sim = c.simulated ?: return
         Scenarios.all.firstOrNull { it.id == id }?.let(sim::play)
     }
 
-    fun clearHistory() {
+    override fun clearHistory() {
         c.engine.clearHistory()
-        navMessage.value = null
+        inputs.update { it.copy(navMessage = null) }
     }
 
-    private fun buildState(engine: EngineState, inputs: UserInputs): MainUiState {
-        val policy = UxPolicy.resolve(engine.drivingState, engine.ux)
-        val report = CoachReport.from(engine.events)
-        val banner = engine.activeWarnings.firstOrNull()
+    private fun handleHeard(text: String) {
+        val reply = assistant.reply(dialog.resolve(text, dialogContext), currentFacts(), pendingEffect)
+        applyReply(reply)
+    }
+
+    private fun applyReply(reply: VoiceReply) {
+        inputs.update { it.copy(lastReply = reply.text) }
+        pendingEffect = reply.pending
+        dialogContext = reply.nextContext
+        voice.say(reply.text)
+        reply.effect?.let(::runEffect)
+    }
+
+    private fun runEffect(effect: VoiceEffect) {
+        when (effect) {
+            is VoiceEffect.FindPlaces -> viewModelScope.launch {
+                val places = c.places.nearby(effect.category)
+                inputs.update { it.copy(places = places, placesCategory = effect.category) }
+                applyReply(assistant.describePlaces(effect.category, places))
+            }
+            is VoiceEffect.RouteTo -> viewModelScope.launch {
+                val message = c.serviceNavigator.navigateTo(effect.place.toDestination())
+                inputs.update { it.copy(navMessage = message) }
+            }
+            VoiceEffect.ShowReservation -> inputs.update { it.copy(showReservation = true) }
+            VoiceEffect.ClearHistory -> clearHistory()
+        }
+    }
+
+    private fun currentFacts(): VoiceFacts {
+        val state = ui.value
+        return VoiceFacts(
+            topWarning = state.topWarning,
+            fuel = state.refuel,
+            score = state.report.score,
+            eventCounts = state.report.counts,
+            shownPlaces = state.inputs.places.orEmpty(),
+        )
+    }
+
+    private fun buildState(
+        engine: EngineState,
+        userInputs: UserInputs,
+        playing: String?,
+        phase: VoicePhase,
+        partial: String?,
+    ): MainUiState {
         val warnings = (engine.activeWarnings.map { it.code } + engine.seenWarnings).distinct().map(
             c.explainer::explain,
         )
         return MainUiState(
             drivingState = engine.drivingState,
-            policy = policy,
+            policy = UxPolicy.resolve(engine.drivingState, engine.ux),
             simulated = c.simulated != null,
-            banner = banner,
-            glance = glanceItems(engine, report, policy, hasBanner = banner != null),
+            topWarning = engine.activeWarnings.firstOrNull(),
+            parts = CarParts.statuses(engine.activeWarnings),
+            fuel = FuelText.summary(engine.refuel),
+            refuel = engine.refuel,
+            report = CoachReport.from(engine.events),
             warningList = warnings,
-            selected = warnings.firstOrNull { it.code == inputs.selectedCode } ?: warnings.firstOrNull(),
-            report = report,
-            navMessage = inputs.navMessage,
-            serviceCenters = inputs.serviceCenters,
-            serviceCentersMock = c.places.isMock,
+            selected = warnings.firstOrNull { it.code == userInputs.selectedCode } ?: warnings.firstOrNull(),
+            inputs = userInputs,
+            voicePhase = phase,
+            partialText = partial,
             scenarios = scenarios,
-            playingScenario = inputs.playingScenario,
+            playingScenario = playing,
         )
     }
 
-    /** 배너가 있으면 글랜스는 한 칸 줄여 주행 중 정보 3개를 넘지 않게 한다 */
-    private fun glanceItems(
-        engine: EngineState,
-        report: CoachReport,
-        policy: UxPolicy,
-        hasBanner: Boolean,
-    ): List<GlanceItem> {
-        val recent = recentEvent(engine)
-        val limit = if (hasBanner) UxPolicy.DRIVING_MAX_ITEMS - 1 else UxPolicy.DRIVING_MAX_ITEMS
-        return GlanceModel.build(
-            engine.activeWarnings,
-            report.score,
-            FuelText.summary(engine.refuel),
-            policy.maxGlanceItems,
-        )
-            .filterNot { hasBanner && it.id == GLANCE_WARNING_ID }
-            .map { if (recent != null && it.id == GLANCE_SCORE_ID) recentEventItem(recent) else it }
-            .take(limit)
-    }
-
-    private fun recentEvent(engine: EngineState): DrivingEvent? {
-        val nowMs = engine.signal?.timestampMs ?: return null
-        return engine.events.lastOrNull()?.takeIf { nowMs - it.timestampMs < RECENT_EVENT_MS }
-    }
-
-    private fun recentEventItem(event: DrivingEvent) = GlanceItem(
-        GLANCE_SCORE_ID,
-        "방금",
-        event.type.label(),
-        GlanceTone.CAUTION,
-    )
+    private fun scenarioInfos(): List<ScenarioInfo> =
+        if (c.simulated == null) emptyList() else Scenarios.all.map { ScenarioInfo(it.id, it.title) }
 
     class Factory(private val c: AppContainer) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -169,9 +190,6 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
     }
 
     private companion object {
-        const val RECENT_EVENT_MS = 3_000L
         const val STOP_TIMEOUT_MS = 5_000L
-        const val GLANCE_WARNING_ID = "warning"
-        const val GLANCE_SCORE_ID = "score"
     }
 }

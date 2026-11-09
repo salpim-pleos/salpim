@@ -49,8 +49,8 @@ dependencies {
     implementation(project(":feature:warning"))
     implementation(project(":feature:service"))
     implementation(project(":feature:coach"))
-    implementation(project(":feature:glance"))
     implementation(project(":feature:fuel"))
+    implementation(project(":feature:voice"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

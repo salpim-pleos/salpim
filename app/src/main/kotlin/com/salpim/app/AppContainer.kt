@@ -18,6 +18,10 @@ import com.salpim.feature.service.FavoriteShopStore
 import com.salpim.feature.service.MockNearbyPlaceRepository
 import com.salpim.feature.service.NearbyPlaceRepository
 import com.salpim.feature.service.ServiceNavigator
+import com.salpim.feature.voice.SpeechInput
+import com.salpim.feature.voice.SpeechOutput
+import com.salpim.feature.voice.android.AndroidSpeechInput
+import com.salpim.feature.voice.android.AndroidSpeechOutput
 import com.salpim.feature.warning.WarningExplainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +54,10 @@ class AppContainer(context: Context) {
 
     /** 블루핸즈·주유소 목록. 현재 mock (TODO(kakao-local) — feature/service/NearbyPlaces.kt) */
     val places: NearbyPlaceRepository = MockNearbyPlaceRepository.fromAssets(appContext)
+
+    /** 음성 입출력. Android 기본 엔진 — TODO(spike-S6): Pleos STT/TTS SDK ON_DEVICE로 교체 검토 */
+    val speechInput: SpeechInput = AndroidSpeechInput(appContext)
+    val speechOutput: SpeechOutput = AndroidSpeechOutput(appContext)
 
     val engine = SalpimEngine(
         scope = scope,

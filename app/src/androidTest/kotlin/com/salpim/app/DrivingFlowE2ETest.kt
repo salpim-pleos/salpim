@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -63,10 +64,11 @@ class DrivingFlowE2ETest {
         rule.onAllNodesWithTag("warning_detail").assertCountEquals(0)
         rule.onAllNodesWithTag("btn_navigate_service").assertCountEquals(0)
         rule.onAllNodesWithTag("scenario_engine_oil_warning").assertCountEquals(0)
-        // 배너 + 글랜스 2개 = 최대 3개
-        rule.onAllNodesWithTag("glance_warning").assertCountEquals(0)
-        rule.onNodeWithTag("glance_fuel").assertIsDisplayed()
-        rule.onNodeWithTag("glance_score").assertIsDisplayed()
+        // 상태 + 연료 + 점수 = 정보 3개, 조작은 마이크 하나
+        rule.onNodeWithTag("fuel_line").assertIsDisplayed()
+        rule.onNodeWithTag("score_line").assertIsDisplayed()
+        rule.onNodeWithTag("btn_mic").assertIsDisplayed()
+        rule.onAllNodesWithTag("places_list").assertCountEquals(0)
     }
 
     @Test
@@ -80,9 +82,21 @@ class DrivingFlowE2ETest {
         rule.onNodeWithTag("warning_detail").assertExists()
         rule.onNodeWithTag("btn_navigate_service").performScrollTo().performClick()
         // 블루핸즈 목록(mock) → 첫 지점 길 안내
-        waitForTag("bluehands_list")
+        waitForTag("places_list")
         rule.onNodeWithTag("badge_mock").assertExists()
         rule.onNodeWithTag("btn_route_mock-a").performScrollTo().performClick()
+        waitForTag("nav_message")
+    }
+
+    @Test
+    fun voiceHintFindsBlueHandsAndRoutesByOrdinal() {
+        // 음성 예시 칩은 그 말을 한 것과 같다 → 마이크 없이 음성 흐름 검증
+        rule.onNodeWithText("가까운 블루핸즈 찾아 줘").performScrollTo().performClick()
+        waitForTag("places_list")
+        rule.waitUntil(5_000) {
+            rule.onAllNodesWithText("곳을 찾았어요", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithText("첫 번째로 가 줘").performScrollTo().performClick()
         waitForTag("nav_message")
     }
 

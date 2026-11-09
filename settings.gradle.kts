@@ -19,4 +19,4 @@ rootProject.name = "salpim"
 
 include(":app")
 include(":core:model", ":core:state", ":core:signal", ":core:ux", ":core:data", ":core:designsystem")
-include(":feature:warning", ":feature:service", ":feature:coach", ":feature:glance", ":feature:fuel", ":feature:voice")
+include(":feature:warning", ":feature:service", ":feature:coach", ":feature:fuel", ":feature:voice")

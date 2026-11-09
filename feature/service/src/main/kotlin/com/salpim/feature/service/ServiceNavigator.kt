@@ -1,10 +1,5 @@
 package com.salpim.feature.service
 
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import com.salpim.core.model.NavResult
 import com.salpim.core.model.NavigationLauncher
 import com.salpim.core.model.ServiceDestination
@@ -41,12 +36,5 @@ class ServiceNavigator(
             NavResult.Unsupported -> "내비 연동을 준비 중이에요"
             is NavResult.Failed -> "안내를 시작하지 못했어요: ${r.reason}"
         }
-    }
-}
-
-@Composable
-fun ServiceNavigateButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Button(onClick = onClick, modifier = modifier.testTag("btn_navigate_service")) {
-        Text("가까운 블루핸즈 찾기")
     }
 }
