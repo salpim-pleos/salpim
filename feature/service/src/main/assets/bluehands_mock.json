@@ -1,0 +1,8 @@
+{
+  "_note": "MOCK. 실제 블루핸즈 지점 정보가 아니다. 이름·주소·좌표·거리 모두 예시 값. TODO(kakao-local): 카카오 로컬 API 키워드 검색(\"블루핸즈\", 현재 좌표+반경)으로 교체",
+  "centers": [
+    {"id": "mock-a", "name": "블루핸즈 예시 A지점", "address": "[예시 주소 A]", "phone": "[예시 전화]", "latitude": 37.5665, "longitude": 126.9780, "distanceKm": 1.2},
+    {"id": "mock-b", "name": "블루핸즈 예시 B지점", "address": "[예시 주소 B]", "phone": "[예시 전화]", "latitude": 37.5700, "longitude": 126.9920, "distanceKm": 2.8},
+    {"id": "mock-c", "name": "블루핸즈 예시 C지점", "address": "[예시 주소 C]", "phone": "[예시 전화]", "latitude": 37.5550, "longitude": 126.9700, "distanceKm": 4.5}
+  ]
+}

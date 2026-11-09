@@ -31,9 +31,13 @@ class ServiceNavigator(
 ) {
     suspend fun navigateToFavorite(): String {
         val shop = store.shop.value ?: return "즐겨찾는 정비소를 먼저 지정해 주세요"
+        return navigateTo(shop)
+    }
+
+    suspend fun navigateTo(destination: ServiceDestination): String {
         if (!launcher.isAvailable) return "내비 연동을 준비 중이에요"
-        return when (val r = launcher.navigateTo(shop)) {
-            NavResult.Started -> "${shop.name}(으)로 안내를 시작했어요"
+        return when (val r = launcher.navigateTo(destination)) {
+            NavResult.Started -> "${destination.name}(으)로 안내를 시작했어요"
             NavResult.Unsupported -> "내비 연동을 준비 중이에요"
             is NavResult.Failed -> "안내를 시작하지 못했어요: ${r.reason}"
         }
@@ -43,6 +47,6 @@ class ServiceNavigator(
 @Composable
 fun ServiceNavigateButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(onClick = onClick, modifier = modifier.testTag("btn_navigate_service")) {
-        Text("정비소로 안내")
+        Text("가까운 블루핸즈 찾기")
     }
 }

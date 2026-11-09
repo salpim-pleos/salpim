@@ -26,7 +26,8 @@ class MainActivity : ComponentActivity() {
                 SalpimRoot(
                     ui = ui,
                     onSelectWarning = vm::selectWarning,
-                    onNavigateService = vm::navigateToService,
+                    onFindServiceCenters = vm::findServiceCenters,
+                    onRouteTo = vm::routeTo,
                     onPlayScenario = vm::playScenario,
                     onClearHistory = vm::clearHistory,
                 )

@@ -52,7 +52,8 @@
 | F0 상태머신 / UxPolicy / SimulatedSignalSource + 시나리오 3개 | 완료 (단위 테스트) |
 | 테스트 환경 | 단위 38개 + e2e 5개 통과 (2026-11-09) |
 | F2 지식 베이스 초안 8종 + 해설기 + 주행/정차 UI | 초안. 문구는 차량 매뉴얼로 검증 필요, 실제 경고 매핑은 S2 이후 |
-| F4 정비소 안내 | UI·흐름 완료, NaviHelper 호출은 S5 이후 (현재 "준비 중" 응답) |
+| F4 블루핸즈 안내·예약 | 블루핸즈 목록은 **mock**(`feature/service/src/main/assets/bluehands_mock.json`, 화면에 "예시 데이터" 표시). TODO: 카카오 로컬 API 검색, NaviHelper 길 안내(S5), 예약 QR, 제휴 예약 API |
+| 디자인 기준 | [docs/DESIGN.md](docs/DESIGN.md) (Pleos 디자인 가이드 + 현대 웹 액션 스타일). Compose 화면은 아직 이전 스타일 |
 | F3 습관 검출 + 리포트 | 초안. 임계값 튜닝 필요 |
 | F1 글랜스 | 초안 |
 | Pleos SDK 연동 (`PleosSignalSource`) | 미착수 — S2/S3/S6 대기 |

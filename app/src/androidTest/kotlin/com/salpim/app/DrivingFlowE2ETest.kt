@@ -79,6 +79,10 @@ class DrivingFlowE2ETest {
         rule.onNodeWithTag("warning_item_TIRE_PRESSURE_LOW").performScrollTo().performClick()
         rule.onNodeWithTag("warning_detail").assertExists()
         rule.onNodeWithTag("btn_navigate_service").performScrollTo().performClick()
+        // 블루핸즈 목록(mock) → 첫 지점 길 안내
+        waitForTag("bluehands_list")
+        rule.onNodeWithTag("badge_mock").assertExists()
+        rule.onNodeWithTag("btn_route_mock-a").performScrollTo().performClick()
         waitForTag("nav_message")
     }
 

@@ -31,6 +31,7 @@ import com.salpim.core.model.DrivingState
 import com.salpim.core.model.WarningCode
 import com.salpim.feature.coach.CoachReportCard
 import com.salpim.feature.glance.GlanceRow
+import com.salpim.feature.service.ServiceCenter
 import com.salpim.feature.service.ServiceNavigateButton
 import com.salpim.feature.warning.WarningBanner
 import com.salpim.feature.warning.WarningDetail
@@ -49,7 +50,8 @@ fun SalpimTheme(content: @Composable () -> Unit) {
 fun SalpimRoot(
     ui: MainUiState,
     onSelectWarning: (WarningCode) -> Unit,
-    onNavigateService: () -> Unit,
+    onFindServiceCenters: () -> Unit,
+    onRouteTo: (ServiceCenter) -> Unit,
     onPlayScenario: (String) -> Unit,
     onClearHistory: () -> Unit,
 ) {
@@ -57,7 +59,7 @@ fun SalpimRoot(
         if (ui.policy.restricted) {
             DrivingScreen(ui)
         } else {
-            StoppedScreen(ui, onSelectWarning, onNavigateService, onPlayScenario, onClearHistory)
+            StoppedScreen(ui, onSelectWarning, onFindServiceCenters, onRouteTo, onPlayScenario, onClearHistory)
         }
         if (ui.simulated) SimulatedBadge(Modifier.align(Alignment.TopEnd).padding(12.dp))
     }
@@ -75,6 +77,41 @@ fun SimulatedBadge(modifier: Modifier = Modifier) {
         fontWeight = FontWeight.Bold,
         fontSize = 14.sp,
     )
+}
+
+/** 블루핸즈 목록 + 휴대폰 예약 안내. mock이면 "예시 데이터"를 표시한다. */
+@Composable
+private fun ServiceCenterList(centers: List<ServiceCenter>, mock: Boolean, onRouteTo: (ServiceCenter) -> Unit) {
+    Column(Modifier.testTag("bluehands_list"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("가까운 블루핸즈", style = MaterialTheme.typography.titleMedium)
+            if (mock) Text("예시 데이터", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag("badge_mock"))
+        }
+        centers.forEach { c ->
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text(c.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        listOfNotNull(c.distanceKm?.let { "%.1fkm".format(it) }, c.address).joinToString(" · "),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                OutlinedButton(onClick = { onRouteTo(c) }, modifier = Modifier.testTag("btn_route_${c.id}")) {
+                    Text("길 안내")
+                }
+            }
+        }
+        // TODO(qr): ReservationLink.OFFICIAL_RESERVATION_URL을 QR 이미지로 표시
+        Text(
+            "휴대폰으로 예약: 현대 공식 정비 예약 페이지 (QR 준비 중)",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.testTag("reservation_hint"),
+        )
+    }
 }
 
 private fun DrivingState.label() = when (this) {
@@ -100,7 +137,8 @@ private fun DrivingScreen(ui: MainUiState) {
 private fun StoppedScreen(
     ui: MainUiState,
     onSelectWarning: (WarningCode) -> Unit,
-    onNavigateService: () -> Unit,
+    onFindServiceCenters: () -> Unit,
+    onRouteTo: (ServiceCenter) -> Unit,
     onPlayScenario: (String) -> Unit,
     onClearHistory: () -> Unit,
 ) {
@@ -134,7 +172,10 @@ private fun StoppedScreen(
             ui.selected?.let { e ->
                 HorizontalDivider()
                 WarningDetail(e) {
-                    if (e.needsService) ServiceNavigateButton(onNavigateService)
+                    if (e.needsService) {
+                        ServiceNavigateButton(onFindServiceCenters)
+                        ui.serviceCenters?.let { ServiceCenterList(it, ui.serviceCentersMock, onRouteTo) }
+                    }
                     ui.navMessage?.let { Text(it, modifier = Modifier.testTag("nav_message")) }
                 }
             }

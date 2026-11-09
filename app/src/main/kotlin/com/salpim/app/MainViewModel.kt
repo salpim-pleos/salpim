@@ -10,6 +10,7 @@ import com.salpim.core.model.WarningCode
 import com.salpim.core.signal.sim.Scenarios
 import com.salpim.feature.coach.CoachReport
 import com.salpim.feature.coach.label
+import com.salpim.feature.service.ServiceCenter
 import com.salpim.feature.glance.GlanceItem
 import com.salpim.feature.glance.GlanceModel
 import com.salpim.feature.glance.GlanceTone
@@ -35,6 +36,9 @@ data class MainUiState(
     val selected: Explanation? = null,
     val report: CoachReport = CoachReport.from(emptyList()),
     val navMessage: String? = null,
+    /** "가까운 블루핸즈 찾기" 결과. null이면 아직 안 찾음 */
+    val serviceCenters: List<ServiceCenter>? = null,
+    val serviceCentersMock: Boolean = false,
     val scenarios: List<ScenarioInfo> = emptyList(),
     val playingScenario: String? = null,
 )
@@ -42,6 +46,7 @@ data class MainUiState(
 class MainViewModel(private val c: AppContainer) : ViewModel() {
     private val selectedCode = MutableStateFlow<WarningCode?>(null)
     private val navMessage = MutableStateFlow<String?>(null)
+    private val centers = MutableStateFlow<List<ServiceCenter>?>(null)
     private val scenarios = if (c.simulated != null) Scenarios.all.map { ScenarioInfo(it.id, it.title) } else emptyList()
 
     val ui: StateFlow<MainUiState> = combine(
@@ -49,7 +54,14 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
         selectedCode,
         navMessage,
         c.simulated?.playing ?: flowOf(null),
-    ) { engine, selected, nav, playing ->
+        centers,
+    ) { values ->
+        val engine = values[0] as EngineState
+        val selected = values[1] as WarningCode?
+        val nav = values[2] as String?
+        val playing = values[3] as String?
+        @Suppress("UNCHECKED_CAST")
+        val found = values[4] as List<ServiceCenter>?
         val policy = UxPolicy.resolve(engine.drivingState, engine.ux)
         val report = CoachReport.from(engine.events)
         val banner = engine.activeWarnings.firstOrNull { it.code.value !in ENERGY_CODES }
@@ -72,6 +84,8 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
             selected = list.firstOrNull { it.code == selected } ?: list.firstOrNull(),
             report = report,
             navMessage = nav,
+            serviceCenters = found,
+            serviceCentersMock = c.serviceCenters.isMock,
             scenarios = scenarios,
             playingScenario = playing,
         )
@@ -81,8 +95,13 @@ class MainViewModel(private val c: AppContainer) : ViewModel() {
         selectedCode.value = code
     }
 
-    fun navigateToService() {
-        viewModelScope.launch { navMessage.value = c.serviceNavigator.navigateToFavorite() }
+    /** 정차 화면에서만 호출된다 (주행 중에는 버튼이 없음) */
+    fun findServiceCenters() {
+        viewModelScope.launch { centers.value = c.serviceCenters.nearby() }
+    }
+
+    fun routeTo(center: ServiceCenter) {
+        viewModelScope.launch { navMessage.value = c.serviceNavigator.navigateTo(center.toDestination()) }
     }
 
     fun playScenario(id: String) {

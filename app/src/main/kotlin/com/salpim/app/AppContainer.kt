@@ -13,6 +13,8 @@ import com.salpim.core.ux.StaticUxRestrictionsSource
 import com.salpim.core.ux.UxRestrictionsSource
 import com.salpim.feature.coach.HabitDetector
 import com.salpim.feature.service.FavoriteShopStore
+import com.salpim.feature.service.MockServiceCenterRepository
+import com.salpim.feature.service.ServiceCenterRepository
 import com.salpim.feature.service.ServiceNavigator
 import com.salpim.feature.warning.WarningExplainer
 import kotlinx.coroutines.CoroutineScope
@@ -43,6 +45,9 @@ class AppContainer(context: Context) {
         initial = if (simulated != null) ServiceDestination("예시 정비소", 37.5665, 126.9780) else null,
     )
     val serviceNavigator = ServiceNavigator(NaviHelperNavigationLauncher(appContext), favoriteShop)
+
+    /** 블루핸즈 목록. 현재 mock (TODO(kakao-local) — feature/service/ServiceCenters.kt) */
+    val serviceCenters: ServiceCenterRepository = MockServiceCenterRepository.fromAssets(appContext)
 
     val engine = SalpimEngine(
         scope = scope,
