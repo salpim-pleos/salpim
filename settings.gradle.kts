@@ -11,7 +11,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // TODO(spike-S6): Pleos SDK 저장소/좌표 확정 후 추가
+        // Pleos SDK [확인됨: S6]
+        maven("https://nexus-playground.pleos.ai/repository/maven-releases/")
     }
 }
 

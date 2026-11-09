@@ -11,7 +11,8 @@ android {
 dependencies {
     api(project(":core:model"))
     api(libs.kotlinx.coroutines.core)
-    // TODO(spike-S6): Pleos Vehicle SDK / NaviHelper 의존성 좌표 확정 후 추가
+    implementation(libs.pleos.vehicle)
+    implementation(libs.pleos.navihelper)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }

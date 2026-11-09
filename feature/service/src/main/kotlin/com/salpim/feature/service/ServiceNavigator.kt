@@ -29,6 +29,16 @@ class ServiceNavigator(
         return navigateTo(shop)
     }
 
+    /** 내비 자체 검색 화면 (실제 장소, 외부 키 불필요) */
+    suspend fun openNaviSearch(keyword: String): String {
+        if (!launcher.isAvailable) return "내비 연동을 준비 중이에요"
+        return when (val r = launcher.openSearch(keyword)) {
+            NavResult.Started -> "내비에서 ‘$keyword’ 검색 화면을 열었어요"
+            NavResult.Unsupported -> "내비 연동을 준비 중이에요"
+            is NavResult.Failed -> "검색 화면을 열지 못했어요: ${r.reason}"
+        }
+    }
+
     suspend fun navigateTo(destination: ServiceDestination): String {
         if (!launcher.isAvailable) return "내비 연동을 준비 중이에요"
         return when (val r = launcher.navigateTo(destination)) {

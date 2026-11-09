@@ -20,4 +20,7 @@ sealed interface NavResult {
 interface NavigationLauncher {
     val isAvailable: Boolean
     suspend fun navigateTo(destination: ServiceDestination): NavResult
+
+    /** 내비 자체 장소 검색 화면을 연다 (외부 키·위치 전송 없이 실제 장소를 찾는 경로) */
+    suspend fun openSearch(keyword: String): NavResult
 }

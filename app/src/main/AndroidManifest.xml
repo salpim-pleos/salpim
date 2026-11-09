@@ -6,10 +6,7 @@
         android:name="android.hardware.type.automotive"
         android:required="false" />
 
-    <!--
-        TODO(spike-S6): Pleos Vehicle SDK 연동 시 실제로 쓰는 도메인 권한만 선언
-        pleos.car.permission.CAR_DRIVE / CAR_SAFETY / CAR_ENERGY
-    -->
+    <!-- Pleos SDK 권한은 SDK를 호출하는 core/signal 매니페스트에서 선언하고 여기로 합쳐진다 -->
 
     <application
         android:name=".SalpimApp"

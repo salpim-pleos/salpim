@@ -15,6 +15,8 @@ class ServiceNavigatorTest {
             last = destination
             return result
         }
+
+        override suspend fun openSearch(keyword: String): NavResult = result
     }
 
     private val shop = ServiceDestination("동네 정비소", 37.5, 127.0)

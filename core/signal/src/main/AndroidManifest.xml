@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Pleos SDK 권한: 실제로 호출하는 API만 (AAR의 @RequiresPermission으로 확인, S6) -->
+    <uses-permission android:name="pleos.car.permission.CAR_SAFETY" />   <!-- Safety: 오일 레벨·엔진 이상·워셔액·안전벨트·에어백 -->
+    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />    <!-- Gear, Odometer -->
+    <uses-permission android:name="pleos.car.permission.CAR_ENERGY" />   <!-- Fuel -->
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />  <!-- NaviHelper requestRoute -->
+    <uses-permission android:name="pleos.car.permission.NAVI_CUSTOM_MAP" />    <!-- NaviHelper requestNavigationScreen -->
+
+</manifest>

@@ -14,9 +14,15 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+        // 신호원: auto(자동차 기기면 Pleos SDK, 아니면 시뮬레이션) | pleos | sim. 예: ./gradlew assembleDebug -Psalpim.signalSource=sim
+        val signalSource = providers.gradleProperty("salpim.signalSource").getOrElse("auto")
+        buildConfigField("String", "SIGNAL_SOURCE", "\"$signalSource\"")
     }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     buildTypes {
         release {

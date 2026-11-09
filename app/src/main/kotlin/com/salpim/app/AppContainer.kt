@@ -1,6 +1,7 @@
 package com.salpim.app
 
 import android.content.Context
+import android.content.pm.PackageManager
 import com.salpim.core.data.HistoryRepository
 import com.salpim.core.data.InMemoryHistoryRepository
 import com.salpim.core.model.ServiceDestination
@@ -32,11 +33,20 @@ class AppContainer(context: Context) {
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-    /** Pleos SDK 연동 전까지는 항상 시뮬레이션. 활성이면 화면에 SIMULATED 배지를 표시한다. */
-    val simulated: SimulatedSignalSource? =
-        if (PleosSignalSource.IMPLEMENTED) null else SimulatedSignalSource(scope)
+    private val isAutomotive = appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
-    private val signalSource: SignalSource = simulated ?: PleosSignalSource(appContext)
+    /** 빌드 설정 salpim.signalSource: auto(자동차 기기면 Pleos SDK) | pleos | sim */
+    private val usePleos = when (BuildConfig.SIGNAL_SOURCE) {
+        "pleos" -> true
+        "sim" -> false
+        else -> isAutomotive
+    }
+
+    /** 시뮬레이션 신호원. 활성이면 화면에 "시뮬레이션 신호"를 항상 표시한다 */
+    val simulated: SimulatedSignalSource? = if (usePleos) null else SimulatedSignalSource(scope)
+
+    @Suppress("ForbiddenMethodCall") // 앱 진입점: 실제 시계를 주입하는 곳
+    private val signalSource: SignalSource = simulated ?: PleosSignalSource(appContext, scope, clock = System::currentTimeMillis)
 
     val uxSource: UxRestrictionsSource = UxRestrictionsSource.create(appContext)
 
@@ -50,7 +60,8 @@ class AppContainer(context: Context) {
         // 시뮬레이션 시연용 예시 정비소. 실제 위치 아님
         initial = if (simulated != null) ServiceDestination("예시 정비소", 37.5665, 126.9780) else null,
     )
-    val serviceNavigator = ServiceNavigator(NaviHelperNavigationLauncher(appContext), favoriteShop)
+    private val navigation = NaviHelperNavigationLauncher(appContext).also { if (isAutomotive) it.connect() }
+    val serviceNavigator = ServiceNavigator(navigation, favoriteShop)
 
     /** 블루핸즈·주유소 목록. 현재 mock (TODO(partner-data) — feature/service/NearbyPlaces.kt) */
     val places: NearbyPlaceRepository = MockNearbyPlaceRepository.fromAssets(appContext)
