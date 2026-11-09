@@ -21,10 +21,6 @@ Thumbs.db
 # Claude Code 로컬 설정 (공유 설정 .claude/settings.json, skills/는 커밋)
 .claude/settings.local.json
 
-# 제출용 release APK만 커밋 (apk/README.md 참고)
-apk/*
-!apk/README.md
-!apk/*_release.apk
 
 # Kotlin daemon/session files
 .kotlin/

@@ -28,7 +28,7 @@ README에서 옮긴 내용. 공개 저장소이므로 개인 식별 정보는 �
 4. 경고 설명 문구를 차량 매뉴얼로 검증
 5. 급조향 임계값을 앞바퀴 조향각 기준으로 재조정
 6. 차속: AAOS CarPropertyManager(PERF_VEHICLE_SPEED) 사용 가능 여부
-7. 시연 영상, release APK (GitHub Release 첨부 검토)
+7. 시연 영상·서명 APK는 `release/`에 커밋됨 (GitHub Release는 작성자 계정이 드러나 쓰지 않음). 화면이 바뀌면 다시 녹화
 
 ## 참고 링크
 
