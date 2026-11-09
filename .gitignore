@@ -25,3 +25,6 @@ Thumbs.db
 apk/*
 !apk/README.md
 !apk/*_release.apk
+
+# Kotlin daemon/session files
+.kotlin/
