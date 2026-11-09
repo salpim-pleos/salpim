@@ -28,3 +28,6 @@ apk/*
 
 # Kotlin daemon/session files
 .kotlin/
+
+# 에이전트 작업 공간 (git worktree)
+.claude/worktrees/
