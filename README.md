@@ -42,7 +42,7 @@
 | F3 | 습관 코치 | 급제동·급가속·급조향 검출, 정차 후 점수와 개선 팁 |
 | F1 | 글랜스 | 주행 중 최대 3개 항목: 활성 경고, 연료/배터리 부족, 오늘의 안전 점수 |
 
-상세 명세와 수용 기준은 [CLAUDE.md](CLAUDE.md)를 본다.
+상세 명세와 수용 기준은 [AGENTS.md](AGENTS.md)를 본다.
 
 ## 진행 현황
 
@@ -56,7 +56,8 @@
 | F3 습관 검출 + 리포트 | 초안. 임계값 튜닝 필요 |
 | F1 글랜스 | 초안 |
 | Pleos SDK 연동 (`PleosSignalSource`) | 미착수 — S2/S3/S6 대기 |
-| Day-0 spike S1~S6 | 미착수 → [docs/spikes](docs/spikes) |
+| Day-0 spike S1~S6 | 문서 조사 완료 (2026-11-09), 에뮬레이터 확인 대기 → [docs/spikes](docs/spikes). **S2/S3 결과로 F2·F3 범위 조정 필요** |
+| 기획서 초안 | [docs/proposal.md](docs/proposal.md) |
 
 ## 레포 구조
 
@@ -80,7 +81,8 @@ salpim/
 ├─ scripts/              # check.sh, e2e.sh
 ├─ apk/                  # 제출용 release APK
 ├─ .claude/skills/       # Claude Code 작업 스킬
-└─ CLAUDE.md             # 개발 규칙 (Claude Code가 세션마다 읽음)
+├─ AGENTS.md             # 개발 규칙 (모든 코딩 에이전트 공통)
+└─ CLAUDE.md             # Claude Code용 진입점 (AGENTS.md를 불러옴)
 ```
 
 의존 방향: `app → feature/* → core/*`. `core/model`은 아무것도 의존하지 않는다. Pleos SDK 타입은 `core/signal` 밖으로 나가지 않는다.
