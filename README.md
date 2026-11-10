@@ -4,7 +4,7 @@
 
 차를 잘 몰라도 됩니다. 경고가 뜨면 쉬운 말 한 줄로 알려 주고, 운전 중에는 음성으로 묻고 답하며, 정차하면 자세한 설명과 다음 할 일(블루핸즈 안내·예약, 주유)까지 이어 줍니다. 기획 배경과 근거는 [docs/proposal.md](docs/proposal.md), 구조와 흐름 그림은 [docs/architecture.md](docs/architecture.md)에 있습니다.
 
-**데모**: 서명된 APK와 시연 영상(시뮬레이션 신호)은 [release/](release/), 화면은 [docs/screens](docs/screens)에 있습니다.
+**데모**: 서명된 APK와 시연 영상(시뮬레이션 신호)은 [release/](release/), 화면은 [docs/screens](docs/screens)에 있습니다. 공모전 익명 심사 때문에 업로드 계정이 표시되는 GitHub Releases 대신 저장소 폴더에 둡니다.
 
 ## 주요 기능
 

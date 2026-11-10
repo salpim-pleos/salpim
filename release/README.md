@@ -1,5 +1,7 @@
 # 시연용 APK와 영상
 
+공모전 심사가 익명이라, 업로드한 계정이 페이지에 표시되는 GitHub Releases 대신 이 폴더에 커밋해 둡니다 (커밋 작성자는 익명).
+
 | 파일 | 내용 |
 |---|---|
 | [salpim-release.apk](salpim-release.apk) | 서명된 release APK (minSdk 28). 자동차 기기면 Pleos Vehicle SDK 신호, 아니면 시뮬레이션 신호로 동작 |
