@@ -3,7 +3,7 @@
 | 파일 | 내용 |
 |---|---|
 | [salpim-release.apk](salpim-release.apk) | 서명된 release APK (minSdk 28). 자동차 기기면 Pleos Vehicle SDK 신호, 아니면 시뮬레이션 신호로 동작 |
-| [salpim-demo-simulation.mp4](salpim-demo-simulation.mp4) | 시연 영상 약 2분 10초, 소리 없음. 일반 Android 에뮬레이터(API 34)에서 시뮬레이션 신호로 녹화 |
+| [salpim-demo-simulation.mp4](salpim-demo-simulation.mp4) | 시연 영상 약 2분 40초, 소리 없음. 일반 Android 에뮬레이터(API 34)에서 시뮬레이션 신호로 녹화 |
 
 영상 순서 (화면에 "시뮬레이션 신호"가 항상 표시됨):
 

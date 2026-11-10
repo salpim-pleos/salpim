@@ -3,6 +3,7 @@ package com.salpim.app.voice
 import com.salpim.app.FuelText
 import com.salpim.core.model.DrivingEventType
 import com.salpim.core.model.Explanation
+import com.salpim.core.model.KoreanParticles
 import com.salpim.core.model.Urgency
 import com.salpim.feature.coach.label
 import com.salpim.feature.fuel.RefuelAdvice
@@ -51,7 +52,7 @@ class VoiceAssistant {
 
     /** 장소를 찾은 뒤 목록을 읽어 주고 번호로 고르게 한다 */
     fun describePlaces(category: PlaceCategory, places: List<NearbyPlace>): VoiceReply {
-        val first = places.firstOrNull() ?: return VoiceReply("근처에서 ${category.spoken()}를 찾지 못했어요.")
+        val first = places.firstOrNull() ?: return VoiceReply("근처에서 ${KoreanParticles.withObject(category.spoken())} 찾지 못했어요.")
         val distance = first.distanceKm?.let { "%.1fkm로 ".format(it) }.orEmpty()
         return VoiceReply(
             text = "${places.size}곳을 찾았어요. 첫 번째가 ${distance}가장 가까워요. 몇 번째로 갈까요?",
@@ -91,7 +92,7 @@ class VoiceAssistant {
     }
 
     private fun routeTo(place: NearbyPlace) = VoiceReply(
-        "${place.name}(으)로 안내할게요.",
+        "${KoreanParticles.withDirection(place.name)} 안내할게요.",
         effect = VoiceEffect.RouteTo(place),
     )
 
@@ -128,7 +129,7 @@ class VoiceAssistant {
 
     private fun keepDrivingSentence(warning: Explanation?): String = when (warning?.urgency) {
         null -> "네, 지금은 괜찮아요."
-        Urgency.INFO -> "네, 달려도 돼요. 정차하면 ${warning.title}을 확인해 주세요."
+        Urgency.INFO -> "네, 달려도 돼요. 정차하면 ${KoreanParticles.withObject(warning.title)} 확인해 주세요."
         Urgency.SERVICE_SOON -> "당장 멈출 필요는 없지만 가까운 시일 안에 점검받으세요."
         Urgency.IMMEDIATE_STOP -> "안전한 곳에 세우는 게 좋아요."
     }

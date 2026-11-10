@@ -101,6 +101,12 @@ class VoiceAssistantTest {
     }
 
     @Test
+    fun routeReplyAttachesParticleWithoutBrackets() {
+        val reply = say(VoiceIntent.SelectOption(1), facts(shown = places))
+        assertEquals("블루핸즈 예시 A지점으로 안내할게요.", reply.text)
+    }
+
+    @Test
     fun confirmRunsPendingRoute() {
         assertEquals(
             VoiceEffect.RouteTo(places[0]),

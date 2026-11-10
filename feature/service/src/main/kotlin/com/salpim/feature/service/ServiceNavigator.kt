@@ -1,5 +1,6 @@
 package com.salpim.feature.service
 
+import com.salpim.core.model.KoreanParticles
 import com.salpim.core.model.NavResult
 import com.salpim.core.model.NavigationLauncher
 import com.salpim.core.model.ServiceDestination
@@ -42,7 +43,7 @@ class ServiceNavigator(
     suspend fun navigateTo(destination: ServiceDestination): String {
         if (!launcher.isAvailable) return "내비 연동을 준비 중이에요"
         return when (val r = launcher.navigateTo(destination)) {
-            NavResult.Started -> "${destination.name}(으)로 안내를 시작했어요"
+            NavResult.Started -> "${KoreanParticles.withDirection(destination.name)} 안내를 시작했어요"
             NavResult.Unsupported -> "내비 연동을 준비 중이에요"
             is NavResult.Failed -> "안내를 시작하지 못했어요: ${r.reason}"
         }
