@@ -19,7 +19,8 @@ internal data class KeywordRule(val intent: VoiceIntent, val keywords: List<Stri
  * 10. 이유              "왜 그래?"       → ExplainIssue      (승낙 "그래"보다 먼저)
  * 11. 차 상태
  * 12. 취소              "아니 다른 데"   → NextOption        (취소는 주제가 없을 때만)
- * 13. 승낙              "들러 줘"        → Confirm           (가장 마지막)
+ * 13. 목적지            "인천공항 가 줘" → GoTo("인천공항")   (주제 단어가 없을 때만, 승낙보다 먼저)
+ * 14. 승낙              "들러 줘"        → Confirm           (가장 마지막)
  * ```
  */
 class VoiceCommandParser {
@@ -29,8 +30,18 @@ class VoiceCommandParser {
         return CLEAR_HISTORY_RULE.intentIfMatches(normalized)
             ?: OrdinalParser.parse(normalized)?.let(VoiceIntent::SelectOption)
             ?: TOPIC_RULES.firstOrNull { it.matches(normalized) }?.intent
+            ?: destinationOrNull(normalized)
             ?: confirmOrNull(normalized)
             ?: VoiceIntent.Unknown(text)
+    }
+
+    private fun destinationOrNull(normalized: String): VoiceIntent? {
+        val tail = VoiceVocabulary.DESTINATION_TAILS.firstOrNull { normalized.endsWith(it) } ?: return null
+        val place = normalized.removeSuffix(tail)
+        val isPlace = place.length >= MIN_PLACE_LENGTH &&
+            place !in VoiceVocabulary.NOT_DESTINATIONS &&
+            place !in VoiceVocabulary.CONFIRM_WORDS
+        return if (isPlace) VoiceIntent.GoTo(place) else null
     }
 
     private fun confirmOrNull(normalized: String): VoiceIntent? {
@@ -42,6 +53,9 @@ class VoiceCommandParser {
     private fun KeywordRule.intentIfMatches(normalized: String): VoiceIntent? = intent.takeIf { matches(normalized) }
 
     private companion object {
+        /** 한 글자 목적지는 오인식이 많다 ("집"은 예외로 두지 않는다 [설계]) */
+        const val MIN_PLACE_LENGTH = 2
+
         val CLEAR_HISTORY_RULE = KeywordRule(VoiceIntent.ClearHistory, VoiceVocabulary.CLEAR_HISTORY)
 
         /** 번호 선택 다음에 순서대로 검사한다. 순서를 바꾸면 우선순위 테스트를 같이 고친다 */

@@ -61,6 +61,20 @@ class ScenarioTest {
     }
 
     @Test
+    fun airportTripFindsRouteAfterDepartingThenWarnsAndParks() {
+        val frames = Scenarios.AIRPORT_TRIP.frames(200, Scenarios.parked())
+        val firstWithRoute = frames.indexOfFirst { it.routeRemainingKm != null }
+        val firstDriving = frames.indexOfFirst { it.gear == Gear.DRIVE }
+        assertTrue(firstDriving < firstWithRoute)
+        assertEquals(Scenarios.AIRPORT, frames[firstWithRoute].destinationName)
+        val firstWarning = frames.indexOfFirst { WarningCodes.ENGINE_OIL_LOW in it.activeWarnings }
+        assertTrue(firstWithRoute < firstWarning)
+        assertEquals(Gear.PARK, frames.last().gear)
+        assertEquals(Scenarios.AIRPORT_TRIP, Scenarios.forDestination("인천공항"))
+        assertEquals(null, Scenarios.forDestination("부산"))
+    }
+
+    @Test
     fun parkingScenarioEndsParked() {
         val last = Scenarios.PARKING_AFTER_WARNING.frames(200, Scenarios.parked()).last()
         assertEquals(Gear.PARK, last.gear)

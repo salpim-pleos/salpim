@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.salpim.app.ui.MainActions
+import com.salpim.app.voice.NoticeSnapshot
+import com.salpim.app.voice.ProactiveNotice
 import com.salpim.app.voice.VoiceAssistant
 import com.salpim.app.voice.VoiceController
 import com.salpim.app.voice.VoiceEffect
@@ -43,11 +45,16 @@ data class MainUiState(
     val fuel: FuelSummary? = null,
     /** 내비 경로 안내 중인 목적지. 없으면 null */
     val route: RouteProgress? = null,
+    /** 내비 목적지 이름 (경로가 아직 안 잡혔어도) */
+    val destinationName: String? = null,
+    /** 시연용 내비 그림이 주행거리만큼 움직인다 */
+    val odometerKm: Double? = null,
     val refuel: RefuelAdvice = RefuelAdvice.Unknown,
     val report: CoachReport = CoachReport.from(emptyList()),
-    /** 정차 화면 목록: 켜진 경고 + 오늘 받은 경고 */
-    val warningList: List<Explanation> = emptyList(),
-    val selected: Explanation? = null,
+    /** 정차 화면 할 일 (급한 순) */
+    val todos: List<Todo> = emptyList(),
+    /** 정차 화면 오른쪽 패널에 지금 보여 줄 것 */
+    val panel: PanelMode = PanelMode.Nothing,
     val inputs: UserInputs = UserInputs(),
     val voicePhase: VoicePhase = VoicePhase.IDLE,
     val partialText: String? = null,
@@ -57,7 +64,7 @@ data class MainUiState(
 
 /** 사용자 조작(터치·음성)으로 바뀌는 화면 상태 */
 data class UserInputs(
-    val selectedCode: WarningCode? = null,
+    val selectedTodo: TodoKey? = null,
     val navMessage: String? = null,
     /** 찾은 장소. null이면 아직 안 찾음 */
     val places: List<NearbyPlace>? = null,
@@ -66,7 +73,15 @@ data class UserInputs(
     val showReservation: Boolean = false,
     /** 앱이 마지막으로 한 말 (화면에도 남긴다) */
     val lastReply: String? = null,
+    /** 그 말에 앞서 운전자가 한 말. 앱이 먼저 말을 걸었으면 null */
+    val lastHeard: String? = null,
+    /** 가는 길에 들르기로 한 곳 (내비 경유지) */
+    val waypoint: String? = null,
 )
+
+/** 장소 목록을 열면 예약 QR·이전 안내 문구는 닫는다 (패널에는 한 가지만) */
+private fun UserInputs.showingPlaces(places: List<NearbyPlace>, category: PlaceCategory) =
+    copy(places = places, placesCategory = category, showReservation = false, navMessage = null)
 
 class MainViewModel(private val c: AppContainer) : ViewModel(), MainActions {
     private val inputs = MutableStateFlow(UserInputs(placesSample = c.places.isSample))
@@ -77,6 +92,10 @@ class MainViewModel(private val c: AppContainer) : ViewModel(), MainActions {
     private var dialogContext: DialogContext = DialogContext.Idle
     private var pendingEffect: VoiceEffect? = null
     private val voice = VoiceController(viewModelScope, c.speechInput, c.speechOutput, onHeard = ::handleHeard)
+
+    init {
+        viewModelScope.launch { watchForNotices() }
+    }
 
     val ui: StateFlow<MainUiState> = combine(
         c.engine.state,
@@ -96,7 +115,13 @@ class MainViewModel(private val c: AppContainer) : ViewModel(), MainActions {
     /** 음성 예시 칩은 그 말을 한 것과 같다 (마이크 없이도 같은 흐름을 쓴다) */
     override fun onHint(text: String) = handleHeard(text)
 
-    override fun selectWarning(code: WarningCode) = inputs.update { it.copy(selectedCode = code) }
+    override fun selectWarning(code: WarningCode) = selectTodo(TodoKey.Warning(code))
+
+    override fun selectTodo(key: TodoKey) = inputs.update {
+        it.copy(selectedTodo = key, places = null, showReservation = false)
+    }
+
+    override fun closePanel() = inputs.update { it.copy(places = null, showReservation = false, navMessage = null) }
 
     override fun findNearby(category: PlaceCategory) = runEffect(VoiceEffect.FindPlaces(category))
 
@@ -115,6 +140,7 @@ class MainViewModel(private val c: AppContainer) : ViewModel(), MainActions {
     }
 
     private fun handleHeard(text: String) {
+        inputs.update { it.copy(lastHeard = text) }
         val reply = assistant.reply(dialog.resolve(text, dialogContext), currentFacts(), pendingEffect)
         applyReply(reply)
     }
@@ -127,19 +153,58 @@ class MainViewModel(private val c: AppContainer) : ViewModel(), MainActions {
         reply.effect?.let(::runEffect)
     }
 
+    /** 경고가 새로 켜지거나 주유가 필요해진 순간 앱이 먼저 한 줄 (ProactiveNotice) */
+    private suspend fun watchForNotices() {
+        var previous: NoticeSnapshot? = null
+        c.engine.state.collect { engine ->
+            val now = NoticeSnapshot(engine.activeWarnings, engine.refuel)
+            previous?.let { ProactiveNotice.between(it, now) }?.let(::announce)
+            previous = now
+        }
+    }
+
+    /**
+     * 앱이 먼저 거는 말은 화면 글자로만 보여 준다.
+     * TODO(audio-focus): 내비 안내 음성과 겹치지 않는 Audio Focus 가이드 확인 후 소리로도 (AGENTS.md 3절)
+     */
+    private fun announce(reply: VoiceReply) {
+        inputs.update { it.copy(lastHeard = null, lastReply = reply.text) }
+        pendingEffect = reply.pending
+        dialogContext = reply.nextContext
+    }
+
     private fun runEffect(effect: VoiceEffect) {
         when (effect) {
             is VoiceEffect.FindPlaces -> viewModelScope.launch {
                 val places = c.places.nearby(effect.category)
-                inputs.update { it.copy(places = places, placesCategory = effect.category) }
-                applyReply(assistant.describePlaces(effect.category, places))
+                inputs.update { it.showingPlaces(places, effect.category) }
+                applyReply(assistant.describePlaces(effect.category, places, onRoute = ui.value.route != null))
             }
             is VoiceEffect.RouteTo -> viewModelScope.launch {
                 val message = c.serviceNavigator.navigateTo(effect.place.toDestination())
-                inputs.update { it.copy(navMessage = message) }
+                // 주행 중에 고른 곳은 목록을 닫는다 (정차하면 목록이 아니라 할 일이 먼저 보이게)
+                val keepList = !ui.value.policy.restricted
+                inputs.update {
+                    it.copy(navMessage = message, waypoint = effect.place.name, places = it.places.takeIf { keepList })
+                }
             }
-            VoiceEffect.ShowReservation -> inputs.update { it.copy(showReservation = true) }
+            is VoiceEffect.StartRoute -> startRoute(effect.destination)
+            VoiceEffect.ShowReservation -> inputs.update { it.copy(showReservation = true, places = null) }
             VoiceEffect.ClearHistory -> clearHistory()
+        }
+    }
+
+    /** 시뮬레이션이면 그 목적지 시연 시나리오, 아니면 내비 검색 화면 (외부 지도 API 없이 실제 장소) */
+    private fun startRoute(destination: String) {
+        inputs.update { it.copy(waypoint = null, places = null, showReservation = false) }
+        val scenario = c.simulated?.let { Scenarios.forDestination(destination) }
+        if (scenario != null) {
+            c.simulated?.play(scenario)
+            return
+        }
+        viewModelScope.launch {
+            val message = c.serviceNavigator.openNaviSearch(destination)
+            inputs.update { it.copy(navMessage = message) }
         }
     }
 
@@ -164,18 +229,27 @@ class MainViewModel(private val c: AppContainer) : ViewModel(), MainActions {
         val warnings = (engine.activeWarnings.map { it.code } + engine.seenWarnings).distinct().map(
             c.explainer::explain,
         )
+        val fuel = FuelText.summary(engine.refuel)
+        val todos = TodoPlan.todos(warnings, fuel, engine.refuel)
         return MainUiState(
             drivingState = engine.drivingState,
             policy = UxPolicy.resolve(engine.drivingState, engine.ux),
             simulated = c.simulated != null,
             topWarning = engine.activeWarnings.firstOrNull(),
             parts = CarParts.statuses(engine.activeWarnings),
-            fuel = FuelText.summary(engine.refuel),
+            fuel = fuel,
             route = RouteProgress.from(engine.signal),
+            destinationName = engine.signal?.destinationName,
+            odometerKm = engine.signal?.odometerKm,
             refuel = engine.refuel,
             report = CoachReport.from(engine.events),
-            warningList = warnings,
-            selected = warnings.firstOrNull { it.code == userInputs.selectedCode } ?: warnings.firstOrNull(),
+            todos = todos,
+            panel = TodoPlan.panel(
+                todos,
+                userInputs.selectedTodo,
+                userInputs.places != null,
+                userInputs.showReservation,
+            ),
             inputs = userInputs,
             voicePhase = phase,
             partialText = partial,

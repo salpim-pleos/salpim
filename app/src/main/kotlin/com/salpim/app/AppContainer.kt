@@ -4,10 +4,12 @@ import android.content.Context
 import android.content.pm.PackageManager
 import com.salpim.core.data.HistoryRepository
 import com.salpim.core.data.InMemoryHistoryRepository
+import com.salpim.core.model.NavigationLauncher
 import com.salpim.core.model.ServiceDestination
 import com.salpim.core.signal.SignalSource
 import com.salpim.core.signal.navi.NaviHelperNavigationLauncher
 import com.salpim.core.signal.pleos.PleosSignalSource
+import com.salpim.core.signal.sim.SimulatedNavigationLauncher
 import com.salpim.core.signal.sim.SimulatedSignalSource
 import com.salpim.core.state.DrivingStateConfig
 import com.salpim.core.ux.StaticUxRestrictionsSource
@@ -69,7 +71,13 @@ class AppContainer(context: Context) {
             null
         },
     )
-    private val navigation = NaviHelperNavigationLauncher(appContext).also { if (isAutomotive) it.connect() }
+
+    /** 시뮬레이션이면 시연용 내비(길 안내가 "시작된" 흐름만), 아니면 NaviHelper */
+    private val navigation: NavigationLauncher = if (simulated != null) {
+        SimulatedNavigationLauncher()
+    } else {
+        NaviHelperNavigationLauncher(appContext).also { if (isAutomotive) it.connect() }
+    }
     val serviceNavigator = ServiceNavigator(navigation, favoriteShop)
 
     /** 블루핸즈·주유소 목록. 현재 서울시청 기준 샘플 (TODO(partner-data) — feature/service/NearbyPlaces.kt) */

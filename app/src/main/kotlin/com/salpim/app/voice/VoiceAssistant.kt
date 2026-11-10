@@ -29,6 +29,9 @@ sealed interface VoiceEffect {
     data class FindPlaces(val category: PlaceCategory) : VoiceEffect
     data class RouteTo(val place: NearbyPlace) : VoiceEffect
     data object ShowReservation : VoiceEffect
+
+    /** 내비 목적지 설정 (시뮬레이션에서는 그 목적지 시연 시나리오) */
+    data class StartRoute(val destination: String) : VoiceEffect
     data object ClearHistory : VoiceEffect
 }
 
@@ -50,9 +53,23 @@ class VoiceAssistant {
         is VoiceResolution.Accepted -> answer(resolution.intent, facts, pending)
     }
 
-    /** 장소를 찾은 뒤 목록을 읽어 주고 번호로 고르게 한다 */
-    fun describePlaces(category: PlaceCategory, places: List<NearbyPlace>): VoiceReply {
+    /**
+     * 장소를 찾은 뒤 목록을 읽어 주고 번호로 고르게 한다.
+     * 주유소 가격을 알면 가장 싼 곳을 먼저 권한다 ("응"이면 그곳으로). [onRoute]면 "가는 길에"로 말한다.
+     */
+    fun describePlaces(category: PlaceCategory, places: List<NearbyPlace>, onRoute: Boolean = false): VoiceReply {
         val first = places.firstOrNull() ?: return VoiceReply("근처에서 ${KoreanParticles.withObject(category.spoken())} 찾지 못했어요.")
+        val cheapest = places.filter { it.priceWon != null }.minByOrNull { it.priceWon ?: Int.MAX_VALUE }
+        if (category == PlaceCategory.GAS_STATION && cheapest?.priceWon != null) {
+            val where = if (onRoute) "가는 길에 있는 주유소 중" else "가까운 주유소 중"
+            return VoiceReply(
+                text = "$where ${KoreanParticles.withSubject(
+                    cheapest.name,
+                )} 리터당 ${"%,d".format(cheapest.priceWon)}원으로 가장 싸요. 안내할까요?",
+                pending = VoiceEffect.RouteTo(cheapest),
+                nextContext = DialogContext.ChoosingOption(places.size),
+            )
+        }
         val distance = first.distanceKm?.let { "%.1fkm로 ".format(it) }.orEmpty()
         return VoiceReply(
             text = "${places.size}곳을 찾았어요. 첫 번째가 ${distance}가장 가까워요. 몇 번째로 갈까요?",
@@ -76,6 +93,10 @@ class VoiceAssistant {
         VoiceIntent.AskRange -> VoiceReply(rangeSentence(facts.fuel))
         is VoiceIntent.SelectOption -> routeTo(facts.shownPlaces[intent.ordinal - 1])
         VoiceIntent.NextOption -> nextOption(facts.shownPlaces, pending)
+        is VoiceIntent.GoTo -> VoiceReply(
+            "${KoreanParticles.withDirection(intent.destination)} 안내할게요.",
+            effect = VoiceEffect.StartRoute(intent.destination),
+        )
         VoiceIntent.OpenReservation -> VoiceReply(
             "휴대폰 카메라로 화면의 QR을 찍으면 예약 페이지가 열려요.",
             effect = VoiceEffect.ShowReservation,

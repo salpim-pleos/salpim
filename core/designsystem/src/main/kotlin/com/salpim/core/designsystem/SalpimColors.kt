@@ -28,4 +28,9 @@ object SalpimColors {
     val Notice = Color(0xFF0082FF) // Pleos regulation blue
     val Ok = Color(0xFF55F165) // Pleos regulation green
     val Simulated = Color(0xFFFF8A00) // Pleos regulation orange
+
+    // 시연용 내비 그림 (시뮬레이션에서만, 실제 지도 아님)
+    val NaviBackground = Color(0xFF24262B)
+    val NaviRoad = Color(0xFF33363D)
+    val NaviRoadEdge = Color(0xFF3D4048)
 }

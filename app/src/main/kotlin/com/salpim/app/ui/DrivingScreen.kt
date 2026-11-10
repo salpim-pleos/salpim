@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextOverflow
 import com.salpim.app.FuelSummary
 import com.salpim.app.MainUiState
 import com.salpim.app.RouteProgress
@@ -28,7 +29,6 @@ import com.salpim.core.designsystem.RangeBar
 import com.salpim.core.designsystem.SalpimColors
 import com.salpim.core.designsystem.SalpimDimens
 import com.salpim.core.designsystem.SalpimType
-import com.salpim.core.designsystem.SpokenLine
 import com.salpim.core.designsystem.StatusIcon
 import com.salpim.core.designsystem.VoiceBar
 import com.salpim.core.model.Explanation
@@ -38,52 +38,81 @@ import com.salpim.core.model.ellipsize
 /** 주행 중 음성 예시 (입력 없음, 말로 묻는다) */
 private val DRIVING_HINTS = listOf("차 상태 어때?", "얼마나 더 갈 수 있어?")
 
+/** 상태 카드가 조금 더 넓다 — 가장 중요한 정보 */
+private const val STATUS_WEIGHT = 1.15f
+
 /**
- * 주행 중: 정보 3개 이하 (상태 / 연료 / 점수), 스크롤·입력 없음, 하단 음성 바 (AGENTS.md 3절).
- * 글보다 아이콘·색·막대로 읽히게 한다. 글은 상태 한 줄과 숫자뿐.
+ * 주행 중: 정보 3개(상태 / 남은 거리 / 점수)를 카드 3장으로, 스크롤·입력 없음, 하단 음성 바 (AGENTS.md 3절).
+ * 왼쪽 큰 상태 카드 | 오른쪽 연료·점수 카드를 위아래로. 높이를 나눠 써서 빈 곳 없이 꽉 차게.
  */
 @Composable
 fun DrivingScreen(ui: MainUiState, actions: MainActions) {
     Column(Modifier.fillMaxSize().testTag("screen_driving")) {
-        Column(
-            Modifier.weight(1f).fillMaxWidth().padding(SalpimDimens.ScreenPadding),
-            verticalArrangement = Arrangement.spacedBy(SalpimDimens.SectionGap),
-        ) {
-            StatusCard(ui.topWarning, ui.parts.size, ui.policy.maxStringLength)
-            ui.fuel?.let { FuelRow(it, ui.route) }
-            ScoreRow(ui.report.score)
-            ui.inputs.lastReply?.let { SpokenLine(it) }
+        Row(Modifier.weight(1f).fillMaxWidth()) {
+            // 시뮬레이션에서는 실제 차의 화면 분할처럼 왼쪽에 내비 자리 그림을 둔다
+            if (ui.simulated) SimNaviPane(ui, Modifier.weight(NAVI_WEIGHT).fillMaxHeight())
+            Dashboard(ui, Modifier.weight(1f).fillMaxHeight())
         }
-        VoiceBar(phase = ui.voicePhase, hints = DRIVING_HINTS, onMicClick = actions::onMic)
+        VoiceBar(
+            phase = ui.voicePhase,
+            hints = DRIVING_HINTS,
+            exchange = ui.exchange(),
+            onMicClick = actions::onMic,
+            trailing = { SimulationMenu(ui, actions, enabled = false) },
+        )
     }
 }
 
-/** 문제 부위 아이콘이 한 번 밝아지며 켜지고, 옆에 쉬운 말 한 줄 + 긴급도 */
+/** 왼쪽 큰 상태 카드 | 오른쪽 연료·점수 카드를 위아래로. 높이를 나눠 써서 빈 곳 없이 꽉 차게 */
 @Composable
-private fun StatusCard(top: Explanation?, partCount: Int, maxChars: Int?) {
+private fun Dashboard(ui: MainUiState, modifier: Modifier) {
     Row(
-        Modifier.fillMaxWidth().background(SalpimColors.Surface).padding(SalpimDimens.SectionGap),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier.padding(SalpimDimens.ScreenPadding),
         horizontalArrangement = Arrangement.spacedBy(SalpimDimens.SectionGap),
+    ) {
+        StatusCard(
+            ui.topWarning,
+            ui.parts.size,
+            ui.policy.maxStringLength,
+            Modifier.weight(STATUS_WEIGHT).fillMaxHeight(),
+        )
+        Column(
+            Modifier.weight(1f).fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(SalpimDimens.SectionGap),
+        ) {
+            FuelCard(ui.fuel, ui.route, Modifier.weight(1f).fillMaxWidth())
+            ScoreCard(ui.report.score, Modifier.weight(1f).fillMaxWidth())
+        }
+    }
+}
+
+/** 시연용 내비 그림 폭 (살핌 대시보드 1 대비) */
+private const val NAVI_WEIGHT = 0.8f
+
+/** 문제 부위 아이콘이 한 번 밝아지며 켜지고, 아래에 쉬운 말 한 줄 + 긴급도. 카드 가운데 정렬 */
+@Composable
+private fun StatusCard(top: Explanation?, partCount: Int, maxChars: Int?, modifier: Modifier) {
+    Column(
+        modifier.background(SalpimColors.Surface).padding(SalpimDimens.ScreenPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap, Alignment.CenterVertically),
     ) {
         if (top == null) {
             StatusIcon(MdiIcons.CheckCircle, description = null, litColor = null)
-            Column {
-                Text("모두 괜찮아요", style = SalpimType.HeadlineSmall, color = SalpimColors.Text)
-                Text("${partCount}곳 정상", style = SalpimType.Label, color = SalpimColors.TextSoft)
-            }
-            return@Row
+            Text("모두 괜찮아요", style = SalpimType.HeadlineSmall, color = SalpimColors.Text)
+            Text("${partCount}곳 정상", style = SalpimType.Label, color = SalpimColors.TextSoft)
+            return@Column
         }
         StatusIcon(top.icon(), description = top.title, litColor = top.urgency.color())
-        Column(verticalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap)) {
-            Text(
-                top.oneLine.substringBefore(SENTENCE_END).ellipsize(maxChars),
-                style = SalpimType.TitleSmall,
-                color = SalpimColors.Text,
-                modifier = Modifier.testTag("warning_banner"),
-            )
-            UrgencyLabel(top.urgency)
-        }
+        Text(
+            top.oneLine.substringBefore(SENTENCE_END).ellipsize(maxChars),
+            style = SalpimType.TitleSmall,
+            color = SalpimColors.Text,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.testTag("warning_banner"),
+        )
+        UrgencyLabel(top.urgency)
     }
 }
 
@@ -101,51 +130,47 @@ internal fun UrgencyLabel(urgency: Urgency) {
 }
 
 /**
- * 주유 아이콘 + 남은 거리 막대 + 숫자. 목적지가 있으면 막대 아래에 "서울시청까지 5.8km" —
- * 주유 판단(필요 거리)의 근거라 같은 줄에 묶는다. 문장은 접근성 설명으로 읽힌다.
+ * 주유 아이콘 + 남은 거리 숫자, 아래에 막대와 목적지. 목적지는 주유 판단(필요 거리)의 근거라 같은 카드에 둔다.
+ * 문장은 접근성 설명으로 읽힌다.
  */
 @Composable
-private fun FuelRow(fuel: FuelSummary, route: RouteProgress?) {
-    val color = if (fuel.needsRefuel) SalpimColors.Caution else SalpimColors.Text
-    Row(
-        Modifier.fillMaxWidth().testTag("fuel_line").clearAndSetSemantics {
-            contentDescription = fuel.text + (route?.let { ", " + it.text } ?: "")
-        },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ButtonIconGap),
+private fun FuelCard(fuel: FuelSummary?, route: RouteProgress?, modifier: Modifier) {
+    val color = if (fuel?.needsRefuel == true) SalpimColors.Caution else SalpimColors.Text
+    val spoken = listOfNotNull(fuel?.text ?: "연료 정보를 기다리는 중", route?.text).joinToString(", ")
+    Column(
+        modifier
+            .background(SalpimColors.Surface)
+            .padding(SalpimDimens.ScreenPadding)
+            .testTag("fuel_line")
+            .clearAndSetSemantics { contentDescription = spoken },
+        verticalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap, Alignment.CenterVertically),
     ) {
-        Icon(
-            MdiIcons.GasStation,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(SalpimDimens.LineIcon),
-        )
-        val barColor = if (fuel.needsRefuel) SalpimColors.Caution else SalpimColors.TextSoft
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap)) {
-            RangeBar(
-                fuel.bar.conservativeFraction,
-                fuel.bar.likelyFraction,
-                barColor,
-                needFraction = fuel.bar.needFraction,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap),
+        ) {
+            Icon(
+                MdiIcons.GasStation,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(SalpimDimens.LineIcon),
             )
-            route?.let {
-                Text(
-                    it.text,
-                    style = SalpimType.Label,
-                    color = SalpimColors.TextSoft,
-                )
-            }
+            Text(fuel?.rangeText ?: "—", style = SalpimType.TitleSmall, color = color)
         }
-        Text(fuel.rangeText, style = SalpimType.TitleSmall, color = color)
+        fuel?.let {
+            val barColor = if (it.needsRefuel) SalpimColors.Caution else SalpimColors.TextSoft
+            RangeBar(it.bar.conservativeFraction, it.bar.likelyFraction, barColor, needFraction = it.bar.needFraction)
+        }
+        route?.let { Text(it.text, style = SalpimType.Label, color = SalpimColors.TextSoft, maxLines = 1) }
     }
 }
 
 @Composable
-private fun ScoreRow(score: Int) {
+private fun ScoreCard(score: Int, modifier: Modifier) {
     Row(
-        Modifier.testTag("score_line"),
+        modifier.background(SalpimColors.Surface).padding(SalpimDimens.ScreenPadding).testTag("score_line"),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ButtonIconGap),
+        horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap),
     ) {
         Icon(
             MdiIcons.Gauge,
@@ -156,11 +181,6 @@ private fun ScoreRow(score: Int) {
         Text("$score", style = SalpimType.HeadlineSmall, color = SalpimColors.Text)
         Text("안전 점수", style = SalpimType.Label, color = SalpimColors.TextSecondary)
     }
-}
-
-@Composable
-internal fun Divider() {
-    Box(Modifier.fillMaxWidth().height(SalpimDimens.Line).background(SalpimColors.Line))
 }
 
 private const val SENTENCE_END = ". "

@@ -4,13 +4,9 @@ import android.os.SystemClock
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.salpim.core.model.Gear
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -18,10 +14,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * 시연 영상 녹화용 흐름. 검증이 아니라 사람이 읽을 수 있게 천천히 화면을 넘긴다.
+ * 시연 영상 녹화용 대화 흐름. 검증이 아니라 사람이 읽을 수 있게 천천히 넘긴다.
  * 평소 e2e(scripts/e2e.sh)에서는 건너뛰고, 계측 인자 salpimDemo=true일 때만 실행한다.
  *   adb shell am instrument -w -e salpimDemo true -e class com.salpim.app.DemoWalkthroughTest \
  *     com.salpim.app.test/androidx.test.runner.AndroidJUnitRunner
+ *
+ * 운전자의 말은 음성 인식 결과와 같은 경로(onHint = 들은 문장)로 넣는다. 에뮬레이터에는 마이크 입력이 없기 때문이다.
  * 신호는 모두 SimulatedSignalSource 시나리오이며, 화면의 "시뮬레이션 신호" 표시는 그대로 둔다.
  */
 @RunWith(AndroidJUnit4::class)
@@ -30,7 +28,7 @@ class DemoWalkthroughTest {
     val rule = createAndroidComposeRule<MainActivity>()
 
     private val container get() = (rule.activity.application as SalpimApp).container
-    private val sim get() = checkNotNull(container.simulated) { "시연 영상은 시뮬레이션 모드에서 녹화한다" }
+    private val vm get() = ViewModelProvider(rule.activity)[MainViewModel::class.java]
 
     @Before
     fun setUp() {
@@ -42,56 +40,64 @@ class DemoWalkthroughTest {
 
     @Test
     fun walkthrough() {
-        pause(READ_LONG_MS) // 주차: 내 차 상태
-        cityHallTripWithEngineOilWarning()
-        serviceByVoiceAtCityHall()
-        lowFuelTrip()
+        pause(READ_MS) // 주차: 내 차 상태
+        departToAirport()
+        refuelOnTheWay()
+        warningWhileDriving()
+        serviceAfterStopping()
     }
 
-    /** 서울시청으로 가는 길에 엔진오일 경고 → 도착해 주차 (한 시나리오) */
-    private fun cityHallTripWithEngineOilWarning() {
-        rule.onNodeWithTag("scenario_city_hall_trip").performScrollTo().performClick()
+    /** "인천공항 가 줘" → 출발, 내비 그림이 움직이고 경로가 잡힌다 */
+    private fun departToAirport() {
+        say("인천공항 가 줘")
         waitForTag("screen_driving", SCENARIO_STEP_TIMEOUT_MS)
-        waitForTag("warning_banner", SCENARIO_STEP_TIMEOUT_MS)
-        waitForTag("screen_stopped", SCENARIO_STEP_TIMEOUT_MS)
+        pause(READ_MS)
     }
 
-    private fun serviceByVoiceAtCityHall() {
-        waitForTag("warning_detail")
-        pause(READ_LONG_MS) // 지금 할 일
+    /** 경로가 잡히면 연료가 모자라다고 먼저 알리고, 가장 싼 주유소를 권한 뒤 경유지로 */
+    private fun refuelOnTheWay() {
+        waitForText("주유소를 찾아 드릴까요", SCENARIO_STEP_TIMEOUT_MS)
+        pause(READ_MS)
+        say("어디서 넣어?")
+        waitForText("가장 싸요")
+        pause(READ_LONG_MS)
+        say("응")
+        waitForText("안내할게요")
+        pause(READ_MS)
+    }
 
-        rule.onNodeWithText("가까운 블루핸즈 찾아 줘").performScrollTo().performClick()
+    /** 가는 길에 엔진오일 경고 → "계속 달려도 돼?" */
+    private fun warningWhileDriving() {
+        waitForText("엔진오일이 부족해요", SCENARIO_STEP_TIMEOUT_MS)
+        pause(READ_MS)
+        say("계속 달려도 돼?")
+        waitForText("당장 멈출 필요는 없지만")
+        pause(READ_MS)
+    }
+
+    /** 주유소에 세우면 할 일 → 블루핸즈 찾기 → 길 안내 → 휴대폰 예약 QR */
+    private fun serviceAfterStopping() {
+        waitForTag("screen_stopped", SCENARIO_STEP_TIMEOUT_MS)
+        waitForTag("warning_detail")
+        pause(READ_LONG_MS)
+        say("가까운 블루핸즈 찾아 줘")
         waitForTag("places_list")
         waitForText("곳을 찾았어요")
-        rule.onNodeWithTag("places_list").performScrollTo()
         pause(READ_MS)
-
-        rule.onNodeWithText("첫 번째로 가 줘").performScrollTo().performClick()
+        say("첫 번째로 가 줘")
         waitForTag("nav_message")
-        rule.onNodeWithTag("nav_message").performScrollTo()
         pause(READ_MS)
-
-        rule.onNodeWithTag("btn_reservation").performScrollTo().performClick()
+        say("예약할래")
         waitForTag("reservation_panel")
-        rule.onNodeWithTag("reservation_panel").performScrollTo()
         pause(READ_LONG_MS)
     }
 
-    private fun lowFuelTrip() {
-        rule.onNodeWithTag("scenario_low_fuel_trip").performScrollTo().performClick()
-        waitForTag("screen_driving", SCENARIO_STEP_TIMEOUT_MS)
-        pause(LOW_FUEL_DRIVE_MS) // 주행 중 연료 한 줄
-        rule.runOnUiThread { sim.set { copy(speedKmh = 0f, gear = Gear.PARK, parkingBrakeOn = true) } }
-        waitForTag("screen_stopped", SCENARIO_STEP_TIMEOUT_MS)
-        waitForTag("btn_find_gas")
-        rule.onNodeWithTag("btn_find_gas").performScrollTo()
-        pause(READ_LONG_MS) // 정차 후 주유 안내
-    }
+    private fun say(text: String) = rule.runOnUiThread { vm.onHint(text) }
 
     private fun waitForTag(tag: String, timeoutMs: Long = STEP_TIMEOUT_MS) =
         rule.waitUntil(timeoutMs) { rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
 
-    private fun waitForText(text: String) = rule.waitUntil(STEP_TIMEOUT_MS) {
+    private fun waitForText(text: String, timeoutMs: Long = STEP_TIMEOUT_MS) = rule.waitUntil(timeoutMs) {
         rule.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty()
     }
 
@@ -105,9 +111,8 @@ class DemoWalkthroughTest {
         const val DEMO_ARGUMENT = "salpimDemo"
         const val READ_MS = 4_000L
         const val READ_LONG_MS = 6_000L
-        const val LOW_FUEL_DRIVE_MS = 12_000L
         const val STEP_TIMEOUT_MS = 10_000L
-        const val SCENARIO_STEP_TIMEOUT_MS = 40_000L
+        const val SCENARIO_STEP_TIMEOUT_MS = 60_000L
         const val PAUSE_SLACK_MS = 5_000L
     }
 }

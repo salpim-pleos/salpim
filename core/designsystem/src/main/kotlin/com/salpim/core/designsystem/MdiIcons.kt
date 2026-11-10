@@ -143,4 +143,13 @@ object MdiIcons {
 
     /** mdi:alert */
     val Alert: ImageVector = icon("Alert", "M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2z")
+
+    /** mdi:close */
+    val Close: ImageVector = icon(
+        "Close",
+        "M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z",
+    )
+
+    /** mdi:chevron-down */
+    val ChevronDown: ImageVector = icon("ChevronDown", "M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6l-6-6z")
 }

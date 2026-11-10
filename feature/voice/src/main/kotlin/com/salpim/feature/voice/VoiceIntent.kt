@@ -26,6 +26,9 @@ sealed interface VoiceIntent {
     /** "다음 주유소", "다른 데" */
     data object NextOption : VoiceIntent
 
+    /** "인천공항 가 줘", "서울시청으로 가자" — 정비소·주유소가 아닌 목적지. [destination]은 공백 없는 장소 이름 */
+    data class GoTo(val destination: String) : VoiceIntent
+
     /** "예약할래", "예약해 줘" */
     data object OpenReservation : VoiceIntent
 

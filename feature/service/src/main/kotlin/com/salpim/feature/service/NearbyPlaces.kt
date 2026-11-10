@@ -24,6 +24,8 @@ data class NearbyPlace(
     val latitude: Double,
     val longitude: Double,
     val distanceKm: Double?,
+    /** 휘발유 리터당 가격(원). 주유소만, 모르면 null. 샘플 목록에서는 샘플 값 */
+    val priceWon: Int? = null,
 ) {
     fun toDestination() = ServiceDestination(name, latitude, longitude, address)
 }
@@ -59,8 +61,9 @@ internal data class PlaceEntry(
     val latitude: Double,
     val longitude: Double,
     val distanceKm: Double? = null,
+    val priceWon: Int? = null,
 ) {
-    fun toPlace() = NearbyPlace(id, category, name, address, phone, latitude, longitude, distanceKm)
+    fun toPlace() = NearbyPlace(id, category, name, address, phone, latitude, longitude, distanceKm, priceWon)
 }
 
 /**
@@ -90,8 +93,7 @@ class SampleNearbyPlaceRepository internal constructor(
 }
 
 /**
- * 휴대폰 예약 연결. 앱 안 예약 API는 없으므로 공식 예약 페이지를 QR로 넘긴다.
- * TODO(qr): QR 이미지 렌더링 (예: ZXing core, Apache-2.0)
+ * 휴대폰 예약 연결. 앱 안 예약 API는 없으므로 공식 예약 페이지를 QR로 넘긴다 (QR은 core/designsystem QrCode, ZXing).
  * TODO(partner-api): 블루핸즈/마이현대 제휴 예약 API가 열리면 정비 항목을 담아 앱 내 예약
  */
 object ReservationLink {

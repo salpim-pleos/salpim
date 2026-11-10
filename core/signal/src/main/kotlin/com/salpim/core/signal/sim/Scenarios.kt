@@ -83,6 +83,41 @@ object Scenarios {
         hold(3_000)
     }
 
+    const val AIRPORT = "인천공항"
+    private const val AIRPORT_ROUTE_KM = 52.0
+    private const val AIRPORT_FUEL_PERCENT = 13.0
+
+    /**
+     * 대화형 시연: "인천공항 가 줘" → 출발 → 경로가 잡히면 연료가 모자라 "가는 길에 주유" →
+     * 가는 길에 엔진오일 경고 → 주유소에서 정차. 경로는 출발 몇 초 뒤에 잡힌다 (내비 경로 탐색).
+     */
+    val AIRPORT_TRIP = scenario("airport_trip", "인천공항 가는 길 (대화)") {
+        set { copy(destinationName = AIRPORT, fuelPercent = AIRPORT_FUEL_PERCENT) }
+        departure(80f)
+        hold(3_000)
+        set { copy(routeRemainingKm = AIRPORT_ROUTE_KM) }
+        hold(25_000)
+        set { copy(activeWarnings = activeWarnings + WarningCodes.ENGINE_OIL_LOW) }
+        hold(10_000)
+        ramp(0f, 13_000) // 약 6.2 km/h/s, 급제동 임계 미만
+        set { copy(gear = Gear.PARK, parkingBrakeOn = true) }
+        hold(3_000)
+    }
+
     val all: List<Scenario> =
-        listOf(CITY_HALL_TRIP, ENGINE_OIL_WARNING, HARD_BRAKE_SEQUENCE, PARKING_AFTER_WARNING, LOW_FUEL_TRIP)
+        listOf(
+            AIRPORT_TRIP,
+            CITY_HALL_TRIP,
+            ENGINE_OIL_WARNING,
+            HARD_BRAKE_SEQUENCE,
+            PARKING_AFTER_WARNING,
+            LOW_FUEL_TRIP,
+        )
+
+    /** "○○ 가 줘"에 맞는 시연 시나리오. 없으면 null (실제 내비 검색으로) */
+    fun forDestination(destination: String): Scenario? = when (destination) {
+        AIRPORT -> AIRPORT_TRIP
+        CITY_HALL -> CITY_HALL_TRIP
+        else -> null
+    }
 }

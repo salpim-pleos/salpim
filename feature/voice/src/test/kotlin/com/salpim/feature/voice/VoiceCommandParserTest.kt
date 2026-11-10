@@ -13,6 +13,25 @@ class VoiceCommandParserTest {
     // 정규화
 
     @Test
+    fun destinationsAreRecognizedWithTheirName() {
+        assertParses(VoiceIntent.GoTo("인천공항"), "인천공항 가 줘", "인천공항으로 가자", "인천공항까지 안내해 줘")
+        assertParses(VoiceIntent.GoTo("서울시청"), "서울 시청으로 가 줘", "서울시청 가고 싶어")
+    }
+
+    @Test
+    fun destinationRuleDoesNotStealOtherIntents() {
+        assertParses(VoiceIntent.FindServiceCenter, "블루핸즈로 가 줘")
+        assertParses(VoiceIntent.SelectOption(1), "첫 번째로 가 줘")
+        assertParses(VoiceIntent.Confirm, "가 줘", "거기로 가 줘", "응 가자")
+        assertParses(VoiceIntent.CanKeepDriving, "계속 가도 돼?")
+    }
+
+    @Test
+    fun whereToRefuelAsksForGasStations() {
+        assertParses(VoiceIntent.FindGasStation, "어디서 넣어?", "어디서 주유해야 돼?")
+    }
+
+    @Test
     fun normalizeRemovesSpacesPunctuationAndLowercasesLatin() {
         assertEquals("차상태어때ok", VoiceText.normalize("  차 상태, 어때?! OK "))
     }

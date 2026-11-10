@@ -2,13 +2,13 @@ package com.salpim.app
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.salpim.core.model.Gear
 import com.salpim.core.model.UxRestrictionFlags
@@ -60,7 +60,8 @@ class DrivingFlowE2ETest {
         driveWithEngineOilWarning()
         waitForTag("screen_driving")
         waitForTag("warning_banner")
-        rule.onNodeWithText("엔진오일이 부족해요", substring = true).assertIsDisplayed()
+        // 같은 문장이 음성 바(앱이 먼저 한 말)에도 있으므로 배너를 지정해 확인한다
+        rule.onNodeWithTag("warning_banner").assertTextContains("엔진오일이 부족해요", substring = true)
         rule.onAllNodesWithTag("warning_detail").assertCountEquals(0)
         rule.onAllNodesWithTag("btn_navigate_service").assertCountEquals(0)
         rule.onAllNodesWithTag("scenario_engine_oil_warning").assertCountEquals(0)
@@ -78,31 +79,33 @@ class DrivingFlowE2ETest {
         setSignal { copy(speedKmh = 0f, gear = Gear.PARK, parkingBrakeOn = true) }
         // 디바운스(1.5초) 후 정차 화면
         waitForTag("screen_stopped")
-        rule.onNodeWithTag("warning_item_ENGINE_OIL_LOW").performScrollTo().performClick()
+        rule.onNodeWithTag("part_ENGINE").performClick()
         rule.onNodeWithTag("warning_detail").assertExists()
-        rule.onNodeWithTag("btn_navigate_service").performScrollTo().performClick()
+        rule.onNodeWithTag("btn_navigate_service").performClick()
         // 블루핸즈 목록(mock) → 첫 지점 길 안내
         waitForTag("places_list")
         rule.onNodeWithTag("badge_sample").assertExists()
-        rule.onNodeWithTag("btn_route_bh-gwanghui").performScrollTo().performClick()
+        rule.onNodeWithTag("btn_route_bh-gwanghui").performClick()
         waitForTag("nav_message")
     }
 
     @Test
     fun voiceHintFindsBlueHandsAndRoutesByOrdinal() {
         // 음성 예시 칩은 그 말을 한 것과 같다 → 마이크 없이 음성 흐름 검증
-        rule.onNodeWithText("가까운 블루핸즈 찾아 줘").performScrollTo().performClick()
+        rule.onNodeWithText("가까운 블루핸즈 찾아 줘").performClick()
         waitForTag("places_list")
         rule.waitUntil(5_000) {
             rule.onAllNodesWithText("곳을 찾았어요", substring = true).fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText("첫 번째로 가 줘").performScrollTo().performClick()
+        rule.onNodeWithText("첫 번째로 가 줘").performClick()
         waitForTag("nav_message")
     }
 
     @Test
     fun scenarioButtonDrivesTheApp() {
-        rule.onNodeWithTag("scenario_engine_oil_warning").performScrollTo().performClick()
+        // 시나리오는 "시뮬레이션 신호" 표시를 눌러 여는 메뉴에 있다 (정차 중에만)
+        rule.onNodeWithTag("badge_simulated").performClick()
+        rule.onNodeWithTag("scenario_engine_oil_warning").performClick()
         waitForTag("screen_driving", timeoutMs = 10_000)
         waitForTag("warning_banner", timeoutMs = 20_000)
     }

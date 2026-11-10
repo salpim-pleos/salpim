@@ -3,203 +3,199 @@ package com.salpim.core.designsystem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
-/** 주 액션: 현대 네이비 직사각형 (docs/DESIGN.md 원칙 5) */
+/** 주 액션: 현대 네이비 직사각형 (docs/DESIGN.md 원칙 5). 나란히 놓을 때는 [centered]로 가운데 정렬 */
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
-    Row(
-        modifier
-            .heightIn(min = SalpimDimens.PrimaryButtonHeight)
-            .background(SalpimColors.Action, RectangleShape)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 32.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ButtonIconGap),
-    ) {
-        icon?.let {
-            Icon(
-                it,
-                contentDescription = null,
-                tint = SalpimColors.OnAction,
-                modifier = Modifier.size(SalpimDimens.ButtonIcon),
-            )
-        }
-        Text(text, style = SalpimType.BodyStrong, color = SalpimColors.OnAction)
-    }
-}
-
-@Composable
-fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
-    Row(
-        modifier
-            .heightIn(min = SalpimDimens.TouchMin)
-            .border(SalpimDimens.Line, SalpimColors.TextTertiary, RectangleShape)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 28.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ButtonIconGap),
-    ) {
-        icon?.let {
-            Icon(
-                it,
-                contentDescription = null,
-                tint = SalpimColors.Text,
-                modifier = Modifier.size(SalpimDimens.ButtonIcon),
-            )
-        }
-        Text(text, style = SalpimType.LabelStrong, color = SalpimColors.Text)
-    }
-}
-
-/** 시뮬레이션 신호일 때 항상 보이는 표시 (AGENTS.md 2절) */
-@Composable
-fun SimulationLabel(modifier: Modifier = Modifier) {
-    Text(
-        "시뮬레이션 신호",
-        modifier = modifier.testTag("badge_simulated"),
-        style = SalpimType.Caption,
-        color = SalpimColors.Simulated,
+fun PrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    centered: Boolean = false,
+) {
+    ActionButton(
+        text,
+        onClick,
+        modifier.background(SalpimColors.Action, RectangleShape),
+        icon,
+        centered,
+        primary = true,
     )
 }
 
-/** 앱이 한 말. 소리와 함께 화면에도 남긴다 */
 @Composable
-fun SpokenLine(text: String, modifier: Modifier = Modifier) {
-    Row(
-        modifier.fillMaxWidth().background(SalpimColors.Surface).padding(horizontal = 24.dp, vertical = 18.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Icon(
-            MdiIcons.VolumeHigh,
-            contentDescription = null,
-            tint = SalpimColors.TextSoft,
-            modifier = Modifier.size(28.dp),
-        )
-        Text(
-            "“$text”",
-            style = SalpimType.BodySmall,
-            color = SalpimColors.Text,
-            modifier = Modifier.testTag("spoken_line"),
-        )
-    }
-}
-
-/** 상태 표시: 색만 쓰지 않고 모양 + 글자를 함께 */
-@Composable
-fun StatusLabel(text: String, color: Color, urgent: Boolean, modifier: Modifier = Modifier) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(Modifier.size(20.dp).background(color, if (urgent) RectangleShape else CircleShape))
-        Text(text, style = SalpimType.LabelStrong, color = color)
-    }
-}
-
-enum class VoicePhase { IDLE, LISTENING, SPEAKING }
-
-/** 모든 화면 하단의 음성 바: 마이크 + 말할 예시 */
-@Composable
-fun VoiceBar(
-    phase: VoicePhase,
-    hints: List<String>,
-    onMicClick: () -> Unit,
+fun SecondaryButton(
+    text: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onHintClick: ((String) -> Unit)? = null,
+    icon: ImageVector? = null,
+    centered: Boolean = false,
+) {
+    ActionButton(
+        text,
+        onClick,
+        modifier.border(SalpimDimens.Line, SalpimColors.TextTertiary, RectangleShape),
+        icon,
+        centered,
+        primary = false,
+    )
+}
+
+@Composable
+private fun ActionButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    icon: ImageVector?,
+    centered: Boolean,
+    primary: Boolean,
+) {
+    val color = if (primary) SalpimColors.OnAction else SalpimColors.Text
+    Row(
+        modifier
+            .heightIn(min = if (primary) SalpimDimens.PrimaryButtonHeight else SalpimDimens.TouchMin)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = if (centered) {
+            Arrangement.spacedBy(SalpimDimens.ButtonIconGap, Alignment.CenterHorizontally)
+        } else {
+            Arrangement.spacedBy(SalpimDimens.ButtonIconGap)
+        },
+    ) {
+        icon?.let {
+            Icon(
+                it,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(SalpimDimens.ButtonIcon),
+            )
+        }
+        Text(
+            text,
+            style = if (primary) SalpimType.BodyStrong else SalpimType.LabelStrong,
+            color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** 여러 할 일 중 하나를 고르는 칩. 고른 칩은 선택 색 면 + 굵은 글자 (색만으로 구분하지 않음) */
+@Composable
+fun ChoiceChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
 ) {
     Row(
-        modifier.fillMaxWidth().background(
-            SalpimColors.Surface,
-        ).padding(horizontal = 32.dp, vertical = 16.dp).testTag("voice_bar"),
+        modifier
+            .heightIn(min = SalpimDimens.TouchMin)
+            .background(if (selected) SalpimColors.SurfaceRaised else SalpimColors.Surface, RectangleShape)
+            .border(SalpimDimens.Line, if (selected) SalpimColors.Selected else SalpimColors.Track, RectangleShape)
+            .clickable(role = Role.Tab, onClick = onClick)
+            .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
+        horizontalArrangement = Arrangement.spacedBy(SalpimDimens.SmallGap),
     ) {
-        MicButton(phase, onMicClick)
-        if (onHintClick == null) {
-            VoiceHintText(phase, hints)
-        } else {
-            VoiceHintChips(hints, onHintClick)
-        }
+        icon?.let { Icon(it, contentDescription = null, tint = SalpimColors.Text, modifier = Modifier.size(28.dp)) }
+        Text(
+            text,
+            style = if (selected) SalpimType.LabelStrong else SalpimType.Label,
+            color = if (selected) SalpimColors.Text else SalpimColors.TextSoft,
+            maxLines = 1,
+        )
     }
 }
 
+/** 패널 닫기 (터치 76dp) */
 @Composable
-private fun MicButton(phase: VoicePhase, onClick: () -> Unit) {
-    val listening = phase == VoicePhase.LISTENING
+fun CloseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
-        Modifier
+        modifier
             .size(SalpimDimens.TouchMin)
-            .background(if (listening) SalpimColors.Notice else SalpimColors.Action, CircleShape)
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = if (listening) "듣는 중" else "말하기" }
-            .testTag("btn_mic"),
+            .semantics { contentDescription = "닫기" }
+            .testTag("btn_close_panel"),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            MdiIcons.Microphone,
-            contentDescription = null,
-            tint = SalpimColors.OnAction,
-            modifier = Modifier.size(32.dp),
-        )
+        Icon(MdiIcons.Close, contentDescription = null, tint = SalpimColors.TextSoft, modifier = Modifier.size(36.dp))
     }
 }
 
+/** 시연 시나리오 한 줄 (시뮬레이션 메뉴용) */
+data class SimulationItem(val id: String, val title: String, val playing: Boolean)
+
+/**
+ * 시뮬레이션 신호일 때 항상 보이는 표시 (AGENTS.md 2절).
+ * [items]가 있고 [menuEnabled]면 눌러서 시연 시나리오를 고른다 — 주행 중에는 조작을 막으므로 표시만 한다.
+ */
 @Composable
-private fun VoiceHintText(phase: VoicePhase, hints: List<String>) {
-    Column {
-        val headline = when (phase) {
-            VoicePhase.LISTENING -> "듣고 있어요"
-            VoicePhase.SPEAKING -> "말하는 중이에요"
-            VoicePhase.IDLE -> hints.firstOrNull()?.let { "“$it” 하고 물어보세요" } ?: "말로 물어보세요"
+fun SimulationBadge(
+    items: List<SimulationItem>,
+    menuEnabled: Boolean,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var open by remember { mutableStateOf(false) }
+    val clickable = menuEnabled && items.isNotEmpty()
+    Box(modifier) {
+        Row(
+            Modifier
+                .heightIn(min = if (clickable) SalpimDimens.TouchMin else 0.dp)
+                .then(if (clickable) Modifier.clickable(role = Role.Button) { open = true } else Modifier)
+                .padding(horizontal = SalpimDimens.ItemGap)
+                .testTag("badge_simulated"),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text("시뮬레이션 신호", style = SalpimType.Caption, color = SalpimColors.Simulated)
+            if (clickable) {
+                Icon(
+                    MdiIcons.ChevronDown,
+                    contentDescription = null,
+                    tint = SalpimColors.Simulated,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
         }
-        Text(headline, style = SalpimType.Label, color = SalpimColors.Text)
-        hints.drop(
-            1,
-        ).firstOrNull()?.let { Text("“$it”도 돼요", style = SalpimType.Label, color = SalpimColors.TextSecondary) }
-    }
-}
-
-@Composable
-private fun VoiceHintChips(hints: List<String>, onHintClick: (String) -> Unit) {
-    // 좁은 분할 창에서도 칩이 잘리지 않게 가로로 밀어 볼 수 있다
-    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            "이렇게 말해 보세요",
-            style = SalpimType.Label,
-            color = SalpimColors.TextSecondary,
-            modifier = Modifier.align(Alignment.CenterVertically),
-        )
-        hints.forEach { hint ->
-            Box(
-                Modifier
-                    .heightIn(min = SalpimDimens.TouchMin)
-                    .border(SalpimDimens.Line, SalpimColors.Track, RectangleShape)
-                    .clickable(role = Role.Button) { onHintClick(hint) }
-                    .padding(horizontal = 22.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(hint, style = SalpimType.Label, color = SalpimColors.Text)
+        DropdownMenu(expanded = open && clickable, onDismissRequest = { open = false }) {
+            items.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(if (item.playing) "재생 중: ${item.title}" else item.title, style = SalpimType.Label) },
+                    onClick = {
+                        open = false
+                        onSelect(item.id)
+                    },
+                    modifier = Modifier.heightIn(min = SalpimDimens.TouchMin).testTag("scenario_${item.id}"),
+                )
             }
         }
     }

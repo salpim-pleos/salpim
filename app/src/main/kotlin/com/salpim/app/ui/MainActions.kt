@@ -1,5 +1,6 @@
 package com.salpim.app.ui
 
+import com.salpim.app.TodoKey
 import com.salpim.core.model.WarningCode
 import com.salpim.feature.service.NearbyPlace
 import com.salpim.feature.service.PlaceCategory
@@ -9,6 +10,10 @@ interface MainActions {
     fun onMic()
     fun onHint(text: String)
     fun selectWarning(code: WarningCode)
+    fun selectTodo(key: TodoKey)
+
+    /** 장소 목록·예약 QR을 닫고 할 일로 돌아간다 */
+    fun closePanel()
     fun findNearby(category: PlaceCategory)
     fun routeTo(place: NearbyPlace)
     fun showReservation()
