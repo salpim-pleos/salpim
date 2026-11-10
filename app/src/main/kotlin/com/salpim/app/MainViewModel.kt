@@ -41,6 +41,8 @@ data class MainUiState(
     val topWarning: Explanation? = null,
     val parts: List<PartStatus> = CarParts.statuses(emptyList()),
     val fuel: FuelSummary? = null,
+    /** 내비 경로 안내 중인 목적지. 없으면 null */
+    val route: RouteProgress? = null,
     val refuel: RefuelAdvice = RefuelAdvice.Unknown,
     val report: CoachReport = CoachReport.from(emptyList()),
     /** 정차 화면 목록: 켜진 경고 + 오늘 받은 경고 */
@@ -60,14 +62,14 @@ data class UserInputs(
     /** 찾은 장소. null이면 아직 안 찾음 */
     val places: List<NearbyPlace>? = null,
     val placesCategory: PlaceCategory? = null,
-    val placesMock: Boolean = false,
+    val placesSample: Boolean = false,
     val showReservation: Boolean = false,
     /** 앱이 마지막으로 한 말 (화면에도 남긴다) */
     val lastReply: String? = null,
 )
 
 class MainViewModel(private val c: AppContainer) : ViewModel(), MainActions {
-    private val inputs = MutableStateFlow(UserInputs(placesMock = c.places.isMock))
+    private val inputs = MutableStateFlow(UserInputs(placesSample = c.places.isSample))
     private val scenarios = scenarioInfos()
 
     private val assistant = VoiceAssistant()
@@ -169,6 +171,7 @@ class MainViewModel(private val c: AppContainer) : ViewModel(), MainActions {
             topWarning = engine.activeWarnings.firstOrNull(),
             parts = CarParts.statuses(engine.activeWarnings),
             fuel = FuelText.summary(engine.refuel),
+            route = RouteProgress.from(engine.signal),
             refuel = engine.refuel,
             report = CoachReport.from(engine.events),
             warningList = warnings,

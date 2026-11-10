@@ -1,5 +1,6 @@
 package com.salpim.app
 
+import com.salpim.core.model.VehicleSignal
 import com.salpim.feature.fuel.RangeEstimate
 import com.salpim.feature.fuel.RefuelAdvice
 import kotlin.math.max
@@ -10,6 +11,26 @@ import kotlin.math.roundToInt
  * [needFraction]은 목적지 + 여유 거리 위치 (모르면 null).
  */
 data class FuelBar(val conservativeFraction: Float, val likelyFraction: Float, val needFraction: Float?)
+
+/** 목적지와 남은 거리. 주유 판단(필요 거리)의 근거라 연료 줄에 함께 보여 준다 */
+data class RouteProgress(val destinationName: String, val remainingKm: Double) {
+    /** "서울시청까지 5.9km" — 10km 미만은 소수 한 자리 */
+    val text: String
+        get() = "${destinationName}까지 ${formatKm(remainingKm)}"
+
+    companion object {
+        private const val ONE_DECIMAL_BELOW_KM = 10.0
+
+        fun from(signal: VehicleSignal?): RouteProgress? {
+            val name = signal?.destinationName ?: return null
+            val km = signal.routeRemainingKm ?: return null
+            return RouteProgress(name, km)
+        }
+
+        private fun formatKm(km: Double): String =
+            if (km < ONE_DECIMAL_BELOW_KM) "%.1fkm".format(km) else "${km.roundToInt()}km"
+    }
+}
 
 /** 주유 예측 요약: 화면 한 줄 [text], 막대 옆 짧은 숫자 [rangeText], 막대 [bar] */
 data class FuelSummary(val text: String, val rangeText: String, val bar: FuelBar, val needsRefuel: Boolean)

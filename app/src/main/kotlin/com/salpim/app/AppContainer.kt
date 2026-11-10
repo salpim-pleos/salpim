@@ -16,8 +16,8 @@ import com.salpim.feature.coach.HabitDetector
 import com.salpim.feature.fuel.EfficiencyTracker
 import com.salpim.feature.fuel.FuelMonitor
 import com.salpim.feature.service.FavoriteShopStore
-import com.salpim.feature.service.MockNearbyPlaceRepository
 import com.salpim.feature.service.NearbyPlaceRepository
+import com.salpim.feature.service.SampleNearbyPlaceRepository
 import com.salpim.feature.service.ServiceNavigator
 import com.salpim.feature.voice.SpeechInput
 import com.salpim.feature.voice.SpeechOutput
@@ -57,14 +57,23 @@ class AppContainer(context: Context) {
     val explainer: WarningExplainer = WarningExplainer.fromAssets(appContext)
 
     val favoriteShop = FavoriteShopStore(
-        // 시뮬레이션 시연용 예시 정비소. 실제 위치 아님
-        initial = if (simulated != null) ServiceDestination("예시 정비소", 37.5665, 126.9780) else null,
+        // 시뮬레이션 시연용 단골 정비소 (샘플 목록의 블루핸즈 광희점과 같은 곳)
+        initial = if (simulated != null) {
+            ServiceDestination(
+                "블루핸즈 광희점",
+                37.56435,
+                126.99817,
+                "서울 중구 마른내로 139",
+            )
+        } else {
+            null
+        },
     )
     private val navigation = NaviHelperNavigationLauncher(appContext).also { if (isAutomotive) it.connect() }
     val serviceNavigator = ServiceNavigator(navigation, favoriteShop)
 
-    /** 블루핸즈·주유소 목록. 현재 mock (TODO(partner-data) — feature/service/NearbyPlaces.kt) */
-    val places: NearbyPlaceRepository = MockNearbyPlaceRepository.fromAssets(appContext)
+    /** 블루핸즈·주유소 목록. 현재 서울시청 기준 샘플 (TODO(partner-data) — feature/service/NearbyPlaces.kt) */
+    val places: NearbyPlaceRepository = SampleNearbyPlaceRepository.fromAssets(appContext)
 
     /** 음성 입출력. Android 기본 엔진 — TODO(spike-S6): Pleos STT/TTS SDK ON_DEVICE로 교체 검토 */
     val speechInput: SpeechInput = AndroidSpeechInput(appContext)

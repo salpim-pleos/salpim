@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import com.salpim.app.FuelSummary
 import com.salpim.app.MainUiState
+import com.salpim.app.RouteProgress
 import com.salpim.core.designsystem.MdiIcons
 import com.salpim.core.designsystem.RangeBar
 import com.salpim.core.designsystem.SalpimColors
@@ -49,7 +50,7 @@ fun DrivingScreen(ui: MainUiState, actions: MainActions) {
             verticalArrangement = Arrangement.spacedBy(SalpimDimens.SectionGap),
         ) {
             StatusCard(ui.topWarning, ui.parts.size, ui.policy.maxStringLength)
-            ui.fuel?.let { FuelRow(it) }
+            ui.fuel?.let { FuelRow(it, ui.route) }
             ScoreRow(ui.report.score)
             ui.inputs.lastReply?.let { SpokenLine(it) }
         }
@@ -99,12 +100,17 @@ internal fun UrgencyLabel(urgency: Urgency) {
     }
 }
 
-/** 주유 아이콘 + 남은 거리 막대 + 숫자. 문장은 접근성 설명으로 읽힌다 */
+/**
+ * 주유 아이콘 + 남은 거리 막대 + 숫자. 목적지가 있으면 막대 아래에 "서울시청까지 5.8km" —
+ * 주유 판단(필요 거리)의 근거라 같은 줄에 묶는다. 문장은 접근성 설명으로 읽힌다.
+ */
 @Composable
-private fun FuelRow(fuel: FuelSummary) {
+private fun FuelRow(fuel: FuelSummary, route: RouteProgress?) {
     val color = if (fuel.needsRefuel) SalpimColors.Caution else SalpimColors.Text
     Row(
-        Modifier.fillMaxWidth().testTag("fuel_line").clearAndSetSemantics { contentDescription = fuel.text },
+        Modifier.fillMaxWidth().testTag("fuel_line").clearAndSetSemantics {
+            contentDescription = fuel.text + (route?.let { ", " + it.text } ?: "")
+        },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(SalpimDimens.ButtonIconGap),
     ) {
@@ -115,13 +121,21 @@ private fun FuelRow(fuel: FuelSummary) {
             modifier = Modifier.size(SalpimDimens.LineIcon),
         )
         val barColor = if (fuel.needsRefuel) SalpimColors.Caution else SalpimColors.TextSoft
-        RangeBar(
-            fuel.bar.conservativeFraction,
-            fuel.bar.likelyFraction,
-            barColor,
-            Modifier.weight(1f),
-            fuel.bar.needFraction,
-        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(SalpimDimens.ItemGap)) {
+            RangeBar(
+                fuel.bar.conservativeFraction,
+                fuel.bar.likelyFraction,
+                barColor,
+                needFraction = fuel.bar.needFraction,
+            )
+            route?.let {
+                Text(
+                    it.text,
+                    style = SalpimType.Label,
+                    color = SalpimColors.TextSoft,
+                )
+            }
+        }
         Text(fuel.rangeText, style = SalpimType.TitleSmall, color = color)
     }
 }

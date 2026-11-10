@@ -28,6 +28,22 @@ class SimulatedSignalSourceTest {
     }
 
     @Test
+    fun playbackTimestampsKeepScenarioSpacingAndNeverGoBack() = runTest {
+        val src = SimulatedSignalSource(backgroundScope, clock = { testScheduler.currentTime }, tickMs = 200)
+        val seen = mutableListOf<VehicleSignal>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { src.signals.toList(seen) }
+        src.start()
+        advanceTimeBy(300)
+        src.play(Scenarios.CITY_HALL_TRIP)
+        advanceTimeBy(40_000)
+        val moving = seen.filter { (it.speedKmh ?: 0f) > 0f }
+        assertTrue(moving.size > 2)
+        moving.zipWithNext().forEach { (a, b) -> assertEquals(200L, b.timestampMs - a.timestampMs) }
+        seen.zipWithNext().forEach { (a, b) -> assertTrue(b.timestampMs >= a.timestampMs) }
+        src.stop()
+    }
+
+    @Test
     fun setOverridesCurrentState() = runTest {
         val src = SimulatedSignalSource(backgroundScope, clock = { testScheduler.currentTime })
         src.set { copy(speedKmh = 42f) }

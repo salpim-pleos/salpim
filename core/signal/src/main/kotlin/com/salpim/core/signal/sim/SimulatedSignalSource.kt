@@ -39,7 +39,8 @@ class SimulatedSignalSource(
         if (tickJob?.isActive == true) return
         tickJob = scope.launch {
             while (isActive) {
-                emitCurrent()
+                // 재생 중에는 재생 루프만 내보낸다. 두 루프가 섞이면 시각이 엇갈려 속도 변화율이 튄다
+                if (playJob?.isActive != true) emitCurrent()
                 delay(tickMs)
             }
         }
@@ -62,11 +63,14 @@ class SimulatedSignalSource(
         cancelPlayback()
         val frames = scenario.frames(tickMs, current)
         _playing.value = scenario.id
+        val baseMs = clock()
+        val firstMs = frames.firstOrNull()?.timestampMs ?: 0L
         val job = scope.launch {
             try {
                 for (frame in frames) {
                     current = frame
-                    emitCurrent()
+                    // [설계] 시각은 시나리오 간격 그대로. delay가 밀려도(느린 기기) 급가속·급제동으로 오인하지 않게
+                    _signals.value = frame.copy(timestampMs = baseMs + frame.timestampMs - firstMs)
                     delay(tickMs)
                 }
             } finally {

@@ -54,7 +54,7 @@ fun TodoPanel(ui: MainUiState, actions: MainActions, modifier: Modifier) {
                 icon = MdiIcons.GasStation,
             )
         }
-        ui.inputs.places?.let { PlaceList(it, ui.inputs.placesMock, actions) }
+        ui.inputs.places?.let { PlaceList(it, ui.inputs.placesSample, actions) }
         if (ui.inputs.showReservation) ReservationPanel()
         ui.inputs.navMessage?.let {
             Text(
@@ -113,16 +113,21 @@ private fun NothingToDo() {
 }
 
 @Composable
-private fun PlaceList(places: List<NearbyPlace>, mock: Boolean, actions: MainActions) {
+private fun PlaceList(places: List<NearbyPlace>, sample: Boolean, actions: MainActions) {
     Column(Modifier.testTag("places_list"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (mock) MockDataLabel()
+        if (sample) SampleDataLabel()
         places.forEachIndexed { index, place -> PlaceRow(index + 1, place, actions) }
     }
 }
 
 @Composable
-private fun MockDataLabel() {
-    Text("예시 데이터", style = SalpimType.Caption, color = SalpimColors.TextSoft, modifier = Modifier.testTag("badge_mock"))
+private fun SampleDataLabel() {
+    Text(
+        "샘플 목록 · 서울시청 기준 직선거리",
+        style = SalpimType.Caption,
+        color = SalpimColors.TextSoft,
+        modifier = Modifier.testTag("badge_sample"),
+    )
 }
 
 @Composable

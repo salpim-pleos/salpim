@@ -49,6 +49,18 @@ class ScenarioTest {
     }
 
     @Test
+    fun cityHallTripHeadsToCityHallThenParksWithWarning() {
+        val frames = Scenarios.CITY_HALL_TRIP.frames(200, Scenarios.parked())
+        val driving = frames.first { it.gear == Gear.DRIVE }
+        assertEquals(Scenarios.CITY_HALL, driving.destinationName)
+        assertTrue(frames.any { it.destinationName != null && WarningCodes.ENGINE_OIL_LOW in it.activeWarnings })
+        val last = frames.last()
+        assertEquals(Gear.PARK, last.gear)
+        assertEquals(null, last.destinationName)
+        assertEquals(null, last.routeRemainingKm)
+    }
+
+    @Test
     fun parkingScenarioEndsParked() {
         val last = Scenarios.PARKING_AFTER_WARNING.frames(200, Scenarios.parked()).last()
         assertEquals(Gear.PARK, last.gear)

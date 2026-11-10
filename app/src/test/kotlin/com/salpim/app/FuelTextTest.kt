@@ -1,5 +1,6 @@
 package com.salpim.app
 
+import com.salpim.core.model.VehicleSignal
 import com.salpim.feature.fuel.EstimateBasis
 import com.salpim.feature.fuel.RangeEstimate
 import com.salpim.feature.fuel.RefuelAdvice
@@ -45,6 +46,17 @@ class FuelTextTest {
     @Test
     fun unknownFuelShowsNothing() {
         assertNull(FuelText.summary(RefuelAdvice.Unknown))
+    }
+
+    @Test
+    fun routeShowsOneDecimalBelowTenKm() {
+        assertEquals("서울시청까지 5.9km", RouteProgress("서울시청", 5.94).text)
+        assertEquals("부산까지 220km", RouteProgress("부산", 220.4).text)
+    }
+
+    @Test
+    fun noRouteWithoutDestinationName() {
+        assertNull(RouteProgress.from(VehicleSignal(timestampMs = 0, routeRemainingKm = 10.0)))
     }
 
     private companion object {

@@ -60,12 +60,29 @@ object Scenarios {
         hold(3_000)
     }
 
-    /** 연료 18%로 220km 떨어진 목적지를 향해 출발 → 주유 예측이 "지금 주유"를 판단 */
+    /** 연료 18%로 220km 떨어진 전주를 향해 출발 → 주유 예측이 "지금 주유"를 판단 */
     val LOW_FUEL_TRIP = scenario("low_fuel_trip", "연료가 부족한 채로 장거리 출발") {
-        set { copy(fuelPercent = 18.0, routeRemainingKm = 220.0) }
+        set { copy(fuelPercent = 18.0, routeRemainingKm = 220.0, destinationName = "전주") }
         departure(90f)
         hold(10_000)
     }
 
-    val all: List<Scenario> = listOf(ENGINE_OIL_WARNING, HARD_BRAKE_SEQUENCE, PARKING_AFTER_WARNING, LOW_FUEL_TRIP)
+    /** 서울시청 도착 후 주변 샘플 목록(feature/service nearby_places_sample.json)과 이어지는 시연 [설계] */
+    const val CITY_HALL = "서울시청"
+    private const val CITY_HALL_ROUTE_KM = 6.0
+
+    /** 서울시청으로 가는 길에 엔진오일 경고 → 도착해 주차. 시연 영상의 기본 흐름 */
+    val CITY_HALL_TRIP = scenario("city_hall_trip", "서울시청 가는 길") {
+        set { copy(destinationName = CITY_HALL, routeRemainingKm = CITY_HALL_ROUTE_KM) }
+        departure(50f)
+        hold(4_000)
+        set { copy(activeWarnings = activeWarnings + WarningCodes.ENGINE_OIL_LOW) }
+        hold(8_000)
+        ramp(0f, 8_000) // 6.25 km/h/s, 급제동 임계 미만
+        set { copy(gear = Gear.PARK, parkingBrakeOn = true, destinationName = null, routeRemainingKm = null) }
+        hold(3_000)
+    }
+
+    val all: List<Scenario> =
+        listOf(CITY_HALL_TRIP, ENGINE_OIL_WARNING, HARD_BRAKE_SEQUENCE, PARKING_AFTER_WARNING, LOW_FUEL_TRIP)
 }

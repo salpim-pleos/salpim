@@ -6,14 +6,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-class MockNearbyPlaceRepositoryTest {
-    private val repo = MockNearbyPlaceRepository.fromJson(
-        File("src/main/assets/${MockNearbyPlaceRepository.ASSET_NAME}").readText(Charsets.UTF_8),
+class SampleNearbyPlaceRepositoryTest {
+    private val repo = SampleNearbyPlaceRepository.fromJson(
+        File("src/main/assets/${SampleNearbyPlaceRepository.ASSET_NAME}").readText(Charsets.UTF_8),
     )
 
     @Test
-    fun mockIsFlaggedAndSortedByDistance() = runTest {
-        assertTrue(repo.isMock)
+    fun sampleIsFlaggedAndSortedByDistance() = runTest {
+        assertTrue(repo.isSample)
         val list = repo.nearby(PlaceCategory.BLUE_HANDS)
         assertTrue(list.isNotEmpty())
         assertEquals(list.sortedBy { it.distanceKm }, list)
@@ -26,10 +26,18 @@ class MockNearbyPlaceRepositoryTest {
     }
 
     @Test
-    fun mockEntriesAreClearlyLabeledAsExamples() = runTest {
+    fun everyEntryHasAddressAndSeoulCoordinates() = runTest {
         PlaceCategory.entries.forEach { category ->
-            repo.nearby(category, limit = 100).forEach { assertTrue(it.name, it.name.contains("예시")) }
+            repo.nearby(category, limit = 100).forEach {
+                assertTrue(it.name, it.address.startsWith("서울"))
+                assertTrue(it.name, it.latitude in SEOUL_LAT && it.longitude in SEOUL_LNG)
+            }
         }
+    }
+
+    private companion object {
+        val SEOUL_LAT = 37.4..37.7
+        val SEOUL_LNG = 126.8..127.2
     }
 
     @Test

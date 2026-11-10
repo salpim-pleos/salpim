@@ -83,8 +83,8 @@ class DrivingFlowE2ETest {
         rule.onNodeWithTag("btn_navigate_service").performScrollTo().performClick()
         // 블루핸즈 목록(mock) → 첫 지점 길 안내
         waitForTag("places_list")
-        rule.onNodeWithTag("badge_mock").assertExists()
-        rule.onNodeWithTag("btn_route_mock-a").performScrollTo().performClick()
+        rule.onNodeWithTag("badge_sample").assertExists()
+        rule.onNodeWithTag("btn_route_bh-gwanghui").performScrollTo().performClick()
         waitForTag("nav_message")
     }
 

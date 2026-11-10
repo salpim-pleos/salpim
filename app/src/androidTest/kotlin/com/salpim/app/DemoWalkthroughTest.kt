@@ -11,7 +11,6 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.salpim.core.model.Gear
-import com.salpim.core.signal.sim.Scenarios
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -44,22 +43,20 @@ class DemoWalkthroughTest {
     @Test
     fun walkthrough() {
         pause(READ_LONG_MS) // 주차: 내 차 상태
-        drivingWithEngineOilWarning()
-        parkingThenServiceByVoice()
+        cityHallTripWithEngineOilWarning()
+        serviceByVoiceAtCityHall()
         lowFuelTrip()
     }
 
-    private fun drivingWithEngineOilWarning() {
-        rule.onNodeWithTag("scenario_engine_oil_warning").performScrollTo().performClick()
+    /** 서울시청으로 가는 길에 엔진오일 경고 → 도착해 주차 (한 시나리오) */
+    private fun cityHallTripWithEngineOilWarning() {
+        rule.onNodeWithTag("scenario_city_hall_trip").performScrollTo().performClick()
         waitForTag("screen_driving", SCENARIO_STEP_TIMEOUT_MS)
         waitForTag("warning_banner", SCENARIO_STEP_TIMEOUT_MS)
-        pause(READ_LONG_MS)
+        waitForTag("screen_stopped", SCENARIO_STEP_TIMEOUT_MS)
     }
 
-    private fun parkingThenServiceByVoice() {
-        // 주행 중에는 시나리오 버튼이 없으므로(안전 규칙) 이어지는 시나리오는 신호원에서 바로 재생한다
-        rule.runOnUiThread { sim.play(Scenarios.PARKING_AFTER_WARNING) }
-        waitForTag("screen_stopped", SCENARIO_STEP_TIMEOUT_MS)
+    private fun serviceByVoiceAtCityHall() {
         waitForTag("warning_detail")
         pause(READ_LONG_MS) // 지금 할 일
 

@@ -24,4 +24,6 @@ data class VehicleSignal(
      * TODO(spike-S5): NaviHelper에서 남은 거리를 얻는 방법 확인
      */
     val routeRemainingKm: Double? = null,
+    /** 내비 목적지 이름. 경로 안내 중일 때만. TODO(spike-S5): NaviHelper DestinationInfo에서 얻는 방법 확인 */
+    val destinationName: String? = null,
 )

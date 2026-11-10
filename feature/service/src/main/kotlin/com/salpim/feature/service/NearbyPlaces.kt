@@ -31,13 +31,13 @@ data class NearbyPlace(
 /**
  * 주변 장소 검색 포트.
  *
- * 현재 구현은 [MockNearbyPlaceRepository] (앱 내 예시 목록, 화면에 "예시 데이터" 표시).
+ * 현재 구현은 [SampleNearbyPlaceRepository] (서울시청 기준 앱 내 샘플 목록, 화면에 "샘플 목록" 표시).
  * TODO(partner-data): 제휴 시 현대 블루핸즈 데이터·예약 API 구현으로 교체한다. 외부 지도 API와 위치 외부 전송은 쓰지 않는다
  *   (docs/proposal.md 3절). 실제 장소가 필요한 시연은 NaviHelper requestNavigationScreen(SearchPlace(...)) 검색 화면을 쓴다 (S5).
  */
 interface NearbyPlaceRepository {
-    /** true면 UI에 "예시 데이터"를 표시한다 */
-    val isMock: Boolean
+    /** true면 실시간 데이터가 아니므로 UI에 "샘플 목록"을 표시한다 */
+    val isSample: Boolean
 
     suspend fun nearby(category: PlaceCategory, limit: Int = DEFAULT_LIMIT): List<NearbyPlace>
 
@@ -63,11 +63,14 @@ internal data class PlaceEntry(
     fun toPlace() = NearbyPlace(id, category, name, address, phone, latitude, longitude, distanceKm)
 }
 
-/** 예시 목록. 실제 장소 정보가 아니다. */
-class MockNearbyPlaceRepository internal constructor(
+/**
+ * 서울시청 주변 샘플 목록 (assets/nearby_places_sample.json). 실제 주소지만 실시간 데이터가 아니고
+ * 거리는 서울시청에서 직선거리라 현재 위치와 무관하다. 출처와 확인 상태는 JSON `_note`.
+ */
+class SampleNearbyPlaceRepository internal constructor(
     private val places: List<NearbyPlace>,
 ) : NearbyPlaceRepository {
-    override val isMock: Boolean = true
+    override val isSample: Boolean = true
 
     override suspend fun nearby(category: PlaceCategory, limit: Int): List<NearbyPlace> =
         places.filter { it.category == category }
@@ -75,13 +78,13 @@ class MockNearbyPlaceRepository internal constructor(
             .take(limit)
 
     companion object {
-        const val ASSET_NAME = "nearby_places_mock.json"
+        const val ASSET_NAME = "nearby_places_sample.json"
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun fromJson(text: String): MockNearbyPlaceRepository =
-            MockNearbyPlaceRepository(json.decodeFromString(PlaceFile.serializer(), text).places.map { it.toPlace() })
+        fun fromJson(text: String): SampleNearbyPlaceRepository =
+            SampleNearbyPlaceRepository(json.decodeFromString(PlaceFile.serializer(), text).places.map { it.toPlace() })
 
-        fun fromAssets(context: Context): MockNearbyPlaceRepository =
+        fun fromAssets(context: Context): SampleNearbyPlaceRepository =
             context.assets.open(ASSET_NAME).bufferedReader(Charsets.UTF_8).use { fromJson(it.readText()) }
     }
 }
